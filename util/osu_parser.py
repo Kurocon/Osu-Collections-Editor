@@ -332,3 +332,33 @@ def load_songs_from_dir(directory):
         songs.add_song(song)
 
     return songs
+
+
+def load_songs_from_dir_gui(directory, dialog):
+    song_dirs = find_songs(directory)
+    sorted_song_dirs = sorted(song_dirs)
+
+    songs = Songs()
+
+    num_songdirs = len(sorted_song_dirs)
+    num_done = 0
+
+    for song_str in sorted_song_dirs:
+        dialog.progress.emit(int((num_done/num_songdirs)*100))
+
+        song = Song()
+        difficulties = song_dirs.get(song_str)
+        sorted_difficulties = sorted(difficulties)
+
+        for difficulty_str in sorted_difficulties:
+            try:
+                dialog.current.emit(difficulty_str)
+                difficulty = Difficulty2.from_file("/".join([directory, song_str, difficulty_str]), difficulty_str[:-4])
+                song.add_difficulty(difficulty)
+            except OsuBeatmapVersionTooOldException or OsuFileFormatException:
+                pass
+
+        songs.add_song(song)
+        num_done += 1
+
+    return songs

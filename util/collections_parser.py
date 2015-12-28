@@ -110,6 +110,57 @@ def parse_collections(path):
     return colls
 
 
+def parse_collections_gui(path, dialog):
+    log = logging.getLogger(__name__)
+    log.debug("Reading .osu file {}".format(path))
+    log.debug("Opening file {}".format(path))
+    fobj = open("{}".format(path), 'rb')
+
+    colls = Collections()
+
+    # Try to parse the file as a collection db.
+    # First the version, which is an int
+    version = int.from_bytes(fobj.read(OSU_INT), byteorder='little')
+    colls.version = version
+    log.debug("CollectionDB version {}".format(version))
+
+    # Then the number of collections, also an int
+    collection_count = int.from_bytes(fobj.read(OSU_INT), byteorder='little')
+    colls.collection_count = collection_count
+    log.debug("There are {} collections in this DB".format(collection_count))
+
+    collections_done = 0
+
+    # Then, for each collection:
+    for i in range(0, collection_count):
+        dialog.progress.emit(int((collections_done/collection_count)*100))
+        c = Collection()
+        log.debug("Parsing collection {}".format(i))
+
+        # The first part of the collection is the name of it.
+        collection_name = parse_string(fobj)
+        c.name = collection_name
+        log.debug("Collection: {}".format(collection_name))
+        dialog.current.emit(collection_name)
+
+        # Then there is the number of beatmaps in the collection
+        collection_beatmap_count = int.from_bytes(fobj.read(OSU_INT), byteorder='little')
+        c.beatmap_count = collection_beatmap_count
+        log.debug("{} maps".format(collection_beatmap_count))
+
+        # Then, for each beatmap in the collection:
+        for j in range(0, collection_beatmap_count):
+            # The MD5 hash for the song
+            cm = CollectionMap()
+            cm.hash = parse_string(fobj)
+            c.beatmaps.append(cm)
+
+        colls.collections.append(c)
+        collections_done += 1
+
+    return colls
+
+
 def parse_string(fileobj):
     """
     Get an OSU string from the file object

@@ -4,9 +4,6 @@ import logging
 class Settings:
     """
     Storage class for application settings
-    :type osu_api_key: str
-    :type default_songs_dir: str
-    :type default_collection_file: str
     """
 
     _instance = None
@@ -14,7 +11,9 @@ class Settings:
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.settings = {
-            'osu_api_key': "11a8e6022b8146bbcaf2a9085fddf5232feaaee2"
+            'osu_api_key': "11a8e6022b8146bbcaf2a9085fddf5232feaaee2",
+            'default_songs_dir': "/data/OwnCloud/Osu Songs",
+            'default_collection_file': "/data/OwnCloud/Osu Program/collection.db"
         }
 
     def get_setting(self, name):

@@ -59,3 +59,5 @@ docs/_build/
 # PyBuilder
 target/
 
+# Project specific gitignores
+ui_designs/icons/
