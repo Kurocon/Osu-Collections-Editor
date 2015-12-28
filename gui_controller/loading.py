@@ -4,9 +4,6 @@ import gui.loading
 import settings
 import util.collections_parser as cp
 import util.osu_parser as op
-import util.song_collection_matcher as scm
-from gui_controller.simpledialogs import QuestionDialog, NotificationDialog
-
 
 class Loading(QtWidgets.QDialog):
     progress = QtCore.pyqtSignal(int)
