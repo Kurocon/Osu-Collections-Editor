@@ -47,8 +47,9 @@ if __name__ == "__main__":
     print("Using song: {}".format(song))
     print("Using difficulty: {}".format(difficulty))
 
-    beatmap = util.osu_parser.Beatmap([util.osu_parser.Difficulty.from_file("/".join([path, song, difficulty]))])
-    beatmap_diff = beatmap.difficulties[0]
+    beatmap_diff = util.osu_parser.Difficulty.from_file("/".join([path, song, difficulty]))
+    beatmap = util.osu_parser.Song()
+    beatmap.add_difficulty(beatmap_diff)
 
     print("------------------------------------------------------------------")
     print("Beatmap: {}".format(beatmap_diff.get_path()))

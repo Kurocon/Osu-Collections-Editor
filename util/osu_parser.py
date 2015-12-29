@@ -151,13 +151,45 @@ class Difficulty2:
     def __init__(self, path):
         self.path = path
         self.name = ""
+        self.artist = ""
+        self.mapper = ""
+        self.difficulty = ""
+        self.ar = 0.0
+        self.cs = 0.0
+        self.hp = 0.0
+        self.od = 0.0
         self.hash = ""
 
     @classmethod
-    def from_file(cls, path, name):
+    def from_file(cls, path):
         d = cls(path)
-        d.name = name
         d.hash = md5(path)
+
+        details = parse_osu_file(path)
+        d.name = details["Metadata"]["Title"]
+        d.artist = details["Metadata"]["Artist"]
+        d.mapper = details["Metadata"]["Creator"]
+        d.difficulty = details["Metadata"]["Version"]
+        try:
+            d.ar = details["Difficulty"]["ApproachRate"]
+        except KeyError:
+            pass
+
+        try:
+            d.cs = details["Difficulty"]["CircleSize"]
+        except KeyError:
+            pass
+
+        try:
+            d.hp = details["Difficulty"]["HPDrainRate"]
+        except KeyError:
+            pass
+
+        try:
+            d.od = details["Difficulty"]["OverallDifficulty"]
+        except KeyError:
+            pass
+
         return d
 
 
@@ -236,40 +268,18 @@ def parse_osu_file(path):
             currentsection = section[0]
             continue
 
+        # Ignore some sections
+        if currentsection in ["Colours", "HitObjects", "TimingPoints", "Events", "General", "Editor"]:
+            continue
+
         # Parse key-value entries
         keyvalue = keyvalPattern.findall(line)
         if len(keyvalue) > 0:
             key, value = keyvalue[0]
 
-            # Ignore some sections
-            if currentsection in ["Colours", "HitObjects", "TimingPoints", "Events"]:
-                continue
-
             # Parse Difficulty values
-            elif currentsection == "Difficulty":
+            if currentsection == "Difficulty":
                 if key in ["ApproachRate", "CircleSize", "HPDrainRate", "OverallDifficulty", "SliderMultiplier", "SliderTickRate"]:
-                    sectiondata[key] = float(value)
-                else:
-                    sectiondata[key] = value
-
-            # Parse Editor values
-            elif currentsection == "Editor":
-                if key == "Bookmarks":
-                    sectiondata[key] = value.split(",")
-                elif key == "DistanceSpacing":
-                    sectiondata[key] = float(value)
-                elif key in ["BeatDivisor", "GridSize", "TimelineZoom"]:
-                    sectiondata[key] = int(round(float(value)))
-                else:
-                    sectiondata[key] = value
-
-            # Parse general values
-            elif currentsection == "General":
-                if key in ["AudioLeadIn", "PreviewTime", "Mode"]:
-                    sectiondata[key] = int(value)
-                elif key in ["Countdown", "LetterboxInBreaks", "WidescreenStoryboard"]:
-                    sectiondata[key] = bool(int(value))
-                elif key == "StackLeniency":
                     sectiondata[key] = float(value)
                 else:
                     sectiondata[key] = value
@@ -286,10 +296,6 @@ def parse_osu_file(path):
             # Parse other key-values
             else:
                 sectiondata[key] = value
-            continue
-
-        # Ignore some sections
-        if currentsection in ["Colours", "HitObjects", "TimingPoints", "Events"]:
             continue
 
         log.warning("Unknown line: {}".format(line))
@@ -345,6 +351,7 @@ def load_songs_from_dir_gui(directory, dialog):
 
     for song_str in sorted_song_dirs:
         dialog.progress.emit(int((num_done/num_songdirs)*100))
+        dialog.current.emit(song_str)
 
         song = Song()
         difficulties = song_dirs.get(song_str)
@@ -352,8 +359,7 @@ def load_songs_from_dir_gui(directory, dialog):
 
         for difficulty_str in sorted_difficulties:
             try:
-                dialog.current.emit(difficulty_str)
-                difficulty = Difficulty2.from_file("/".join([directory, song_str, difficulty_str]), difficulty_str[:-4])
+                difficulty = Difficulty2.from_file("/".join([directory, song_str, difficulty_str]))
                 song.add_difficulty(difficulty)
             except OsuBeatmapVersionTooOldException or OsuFileFormatException:
                 pass
