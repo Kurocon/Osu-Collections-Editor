@@ -1,4 +1,4 @@
-from logging.config import logging
+import logging
 
 from PyQt5 import QtWidgets
 import gui.startup
