@@ -389,10 +389,15 @@
             <number>0</number>
            </property>
            <item>
-            <widget class="QListWidget" name="songs_list">
+            <widget class="QTreeWidget" name="songs_list">
              <property name="selectionMode">
               <enum>QAbstractItemView::ExtendedSelection</enum>
              </property>
+             <column>
+              <property name="text">
+               <string notr="true">1</string>
+              </property>
+             </column>
             </widget>
            </item>
           </layout>
@@ -565,6 +570,7 @@
     </property>
     <addaction name="action_open"/>
     <addaction name="action_save"/>
+    <addaction name="action_close"/>
     <addaction name="separator"/>
     <addaction name="action_exit"/>
     <addaction name="separator"/>
@@ -616,8 +622,19 @@
    </property>
   </action>
   <action name="action_save">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Save</string>
+   </property>
+  </action>
+  <action name="action_close">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Close</string>
    </property>
   </action>
  </widget>

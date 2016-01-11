@@ -25,11 +25,49 @@ class Collection:
     :type name: str
     :type beatmap_count: int
     :type beatmaps: list[CollectionMap]
+    :type mapsets: list[util.osu_parser.Song]
+    :type unmatched: list[CollectionMap]
     """
     def __init__(self):
         self.name = ""
         self.beatmap_count = 0
         self.beatmaps = []
+        self.mapsets = []
+        self.unmatched = []
+
+    def get_unmatched_song(self, song_hash):
+        """
+        Returns CollectionMap of the given unmatched hash
+        :param song_hash:
+        :return:
+        """
+        for s in self.unmatched:
+            if s.hash == song_hash:
+                return s
+        return None
+
+    def remove_song(self, song_difficulty_or_hash):
+        found = None
+        for m in self.beatmaps:
+            if m.hash == song_difficulty_or_hash or m.difficulty == song_difficulty_or_hash:
+                found = m
+                break
+
+        if found:
+            # Remove the map from the beatmap list
+            self.beatmaps.remove(found)
+
+            # We also need to remove the map from the mapset it belongs to
+            for m in self.mapsets:
+                if found in m.difficulties:
+                    m.difficulties.remove(found.difficulty)
+
+                    # If there are no maps in this mapset any more, remove it
+                    if not m.difficulties:
+                        self.mapsets.remove(m)
+            return True
+        else:
+            return False
 
 
 class CollectionMap:
@@ -41,6 +79,7 @@ class CollectionMap:
     def __init__(self):
         self.hash = ""
         self.difficulty = None
+        self.mapset = None
         self.from_api = False
 
 # Define byte lengths for different data types

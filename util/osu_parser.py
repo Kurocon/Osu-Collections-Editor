@@ -159,6 +159,7 @@ class Difficulty2:
         self.hp = 0.0
         self.od = 0.0
         self.hash = ""
+        self.from_api = False
 
     @classmethod
     def from_file(cls, path):
@@ -213,6 +214,21 @@ class Songs:
 
     def add_song(self, song):
         self.songs.append(song)
+
+    def get_song(self, song_hash):
+        """
+        Returns the song with the given hash
+        :param song_hash: Hash of the song to get
+        :type song_hash: str
+        :return: Mapset and song difficulty, or None if nothing was found
+        :rtype: tuple(Song, Difficulty2) | None
+        """
+        for song in self.songs:
+            for diff in song.difficulties:
+                if diff.hash == song_hash:
+                    return song, diff
+
+        return None
 
 
 def parse_osu_file(path):

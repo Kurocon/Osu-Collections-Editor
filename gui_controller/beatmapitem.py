@@ -5,12 +5,13 @@ import gui.beatmapitem
 
 
 class BeatmapItem(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, difficulty):
         super(BeatmapItem, self).__init__()
         self.log = logging.getLogger(__name__)
 
         self.ui = gui.beatmapitem.Ui_BeatmapItem()
         self.ui.setupUi(self)
+        self.difficulty = difficulty
 
     def set_name(self, name, artist=None):
         if artist:
