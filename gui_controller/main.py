@@ -696,12 +696,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.log.info("Collection is on the bottom, cannot move down.")
 
     def add_song(self):
+        # Disable main window so the current collection can't be changed.
+        self.setEnabled(False)
+
         # Create loading dialog
         l = LoadingAddSong()
         l.open()
         l.text.emit("Loading song list...")
 
         u = AddSongs(self.current_collection.name, self.songs, l)
+
         if u.exec_():  # True if dialog is accepted
             # Get the current addsongs_list contents
             asl = u.ui.addsongs_list
@@ -751,6 +755,9 @@ class MainWindow(QtWidgets.QMainWindow):
             # Redraw the current collection tree
             self.log.debug("Simulating click on the current collection to refresh the collection list.")
             self.collection_list_clicked(self.ui.collection_list.currentItem())
+
+        # Re-enable the main window again.
+        self.setEnabled(True)
 
     def remove_song(self):
         selected_items = self.ui.songs_list.selectedItems()
