@@ -19,6 +19,10 @@ class LoadingAddSong(QtWidgets.QDialog):
         self.ui = gui.loading.Ui_LoadingDialog()
         self.ui.setupUi(self)
 
+        self.setModal(True)
+        self.setFixedSize(self.width(), self.height())
+        self.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint)
+
         self.progress.connect(self.update_precentage)
         self.current.connect(self.update_current)
         self.text.connect(self.update_text)
