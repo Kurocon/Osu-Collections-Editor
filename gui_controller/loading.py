@@ -5,6 +5,7 @@ import settings
 import util.collections_parser as cp
 import util.osu_parser as op
 
+
 class Loading(QtWidgets.QDialog):
     progress = QtCore.pyqtSignal(int)
     current = QtCore.pyqtSignal(str)

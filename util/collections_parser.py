@@ -1,36 +1,48 @@
 import logging
+import struct
+
+from util.osu_parser import Difficulty2
 
 
 class Collections:
     """
-    :type collection_count: int
     :type version: int
     :type collections: list[Collection]
     """
     def __init__(self):
-        self.collection_count = 0
         self.version = 0
         self.collections = []
 
-    def get_collection(self, name):
-        for collection in self.collections:
-            if collection.name == name:
-                return collection
+    def set_collection(self, name, collection):
+        try:
+            c = [c for c in self.collections if c.name == name][0]
+        except KeyError:
+            c = None
 
-        return None
+        if c is not None:
+            i = self.collections.index(c)
+            self.collections[i] = collection
+        else:
+            self.collections.append(collection)
+
+    def get_collection(self, name):
+        try:
+            c = [c for c in self.collections if c.name == name][0]
+        except KeyError:
+            c = None
+
+        return c
 
 
 class Collection:
     """
     :type name: str
-    :type beatmap_count: int
     :type beatmaps: list[CollectionMap]
     :type mapsets: list[util.osu_parser.Song]
     :type unmatched: list[CollectionMap]
     """
     def __init__(self):
         self.name = ""
-        self.beatmap_count = 0
         self.beatmaps = []
         self.mapsets = []
         self.unmatched = []
@@ -46,12 +58,40 @@ class Collection:
                 return s
         return None
 
+    def find_collectionmap_by_difficulty(self, difficulty_or_hash):
+        """
+        Finds the collectionmap object beloning to the given difficulty
+        :param difficulty_or_hash: The difficulty or hash to search for
+        :type difficulty_or_hash: Difficulty2|str
+        :return: The collectionmap if found, else None
+        :rtype: CollectionMap|None
+        """
+        if isinstance(difficulty_or_hash, str):
+            for m in self.beatmaps:
+                if m.hash == difficulty_or_hash:
+                    return m
+            else:
+                return None
+        elif isinstance(difficulty_or_hash, Difficulty2):
+            for m in self.beatmaps:
+                if m.difficulty == difficulty_or_hash:
+                    return m
+            else:
+                return None
+        else:
+            return None
+
     def remove_song(self, song_difficulty_or_hash):
         found = None
         for m in self.beatmaps:
-            if m.hash == song_difficulty_or_hash or m.difficulty == song_difficulty_or_hash:
-                found = m
-                break
+            if isinstance(song_difficulty_or_hash, str):
+                if m.hash == song_difficulty_or_hash:
+                    found = m
+                    break
+            elif isinstance(song_difficulty_or_hash, Difficulty2):
+                if m.difficulty == song_difficulty_or_hash or m.hash == song_difficulty_or_hash.hash:
+                    found = m
+                    break
 
         if found:
             # Remove the map from the beatmap list
@@ -59,14 +99,35 @@ class Collection:
 
             # We also need to remove the map from the mapset it belongs to
             for m in self.mapsets:
-                if found in m.difficulties:
-                    m.difficulties.remove(found.difficulty)
+                if found.difficulty.hash in [d.hash for d in m.difficulties]:
+                    # If the found difficulty is the same, remove it directly
+                    if found.difficulty in m.difficulties:
+                        m.difficulties.remove(found.difficulty)
+                    # Else, find the entry in the list by hash, then remove it.
+                    else:
+                        for d in m.difficulties:
+                            if d.hash == found.difficulty.hash:
+                                m.difficulties.remove(d)
+                                break
 
                     # If there are no maps in this mapset any more, remove it
                     if not m.difficulties:
                         self.mapsets.remove(m)
             return True
         else:
+            # The song was not found in this collections' beatmaps. Try to remove it from the mapsets if it is in there.
+            if isinstance(song_difficulty_or_hash, Difficulty2):
+                for m in self.mapsets:
+                    if song_difficulty_or_hash.hash in [d.hash for d in m.difficulties]:
+                        for d in m.difficulties:
+                            if d.hash == song_difficulty_or_hash.hash:
+                                m.difficulties.remove(d)
+                                break
+
+                        # If there are no maps in this mapset any more, remove it
+                        if not m.difficulties:
+                            self.mapsets.remove(m)
+
             return False
 
 
@@ -74,6 +135,7 @@ class CollectionMap:
     """
     :type hash: str
     :type difficulty: util.osu_parser.Difficulty2
+    :type mapset: util.osu_parser.Song
     :type from_api: bool
     """
     def __init__(self):
@@ -119,7 +181,6 @@ def parse_collections(path):
 
     # Then the number of collections, also an int
     collection_count = int.from_bytes(fobj.read(OSU_INT), byteorder='little')
-    colls.collection_count = collection_count
     log.debug("There are {} collections in this DB".format(collection_count))
 
     # Then, for each collection:
@@ -134,7 +195,6 @@ def parse_collections(path):
 
         # Then there is the number of beatmaps in the collection
         collection_beatmap_count = int.from_bytes(fobj.read(OSU_INT), byteorder='little')
-        c.beatmap_count = collection_beatmap_count
         log.debug("{} maps".format(collection_beatmap_count))
 
         # Then, for each beatmap in the collection:
@@ -165,7 +225,6 @@ def parse_collections_gui(path, dialog):
 
     # Then the number of collections, also an int
     collection_count = int.from_bytes(fobj.read(OSU_INT), byteorder='little')
-    colls.collection_count = collection_count
     log.debug("There are {} collections in this DB".format(collection_count))
 
     collections_done = 0
@@ -184,7 +243,6 @@ def parse_collections_gui(path, dialog):
 
         # Then there is the number of beatmaps in the collection
         collection_beatmap_count = int.from_bytes(fobj.read(OSU_INT), byteorder='little')
-        c.beatmap_count = collection_beatmap_count
         log.debug("{} maps".format(collection_beatmap_count))
 
         # Then, for each beatmap in the collection:
@@ -247,3 +305,95 @@ def parse_uleb128(fileobj):
 
 def print_as_bits(byte):
     return "{0:b}".format(byte)
+
+
+##
+# Save functions
+##
+
+# collection.db format
+# Data type     Description
+# Int           Version (e.g. 20150203)
+# Int           Number of collections
+#
+# The following will be repeated for the total number of collections.
+# String        Name of the collection
+# Int           Number of beatmaps in the collection
+# String*       Beatmap MD5 hash. Repeated for as many beatmaps as are in the collection.
+
+def save_collection(collection, location):
+    """
+    Save the given collection database to the given location
+    :param collection: The collection to save
+    :type collection: Collections
+    :param location: The file path to save the collection to
+    :type location: str
+    """
+
+    # Open the output file
+    log = logging.getLogger(__name__)
+    log.debug("Saving CollectionDB to {}".format(location))
+    log.debug("Opening file {}".format(location))
+    fobj = open("{}".format(location), 'wb')
+
+    # First write the collection version integer
+    fobj.write(get_int(collection.version))
+
+    # Then write the number of collections
+    fobj.write(get_int(len(collection.collections)))
+
+    # Then, for each collection
+    for col in collection.collections:
+
+        log.debug("Writing collection {}".format(col.name))
+
+        # Write the collection name
+        fobj.write(get_string(col.name))
+
+        # Write the number of beatmaps in this collection
+        fobj.write(get_int(len(col.beatmaps)))
+
+        # Then for all beatmaps in the collection, write the MD5 hashes.
+        for map in col.beatmaps:
+            fobj.write(get_string(map.hash))
+
+    # Close the file
+    fobj.close()
+
+    log.debug("Done saving collections.")
+
+
+def get_int(integer):
+    return struct.pack("I", integer)
+
+
+def get_string(string):
+    if not string:
+        # If the string is empty, the string consists of just this byte
+        return bytes([0x00])
+    else:
+        # Else, it starts with 0x0b
+        result = bytes([0x0b])
+
+        # Followed by the length of the string as an ULEB128
+        result += get_uleb128(len(string))
+
+        # Followed by the string in UTF-8
+        result += string.encode('utf-8')
+
+        return result
+
+
+def get_uleb128(integer):
+    cont_loop = True
+    result = b''
+
+    while cont_loop:
+        byte = integer & 0x7F
+        integer >>= 7
+        if integer != 0:
+            byte |= 0x80
+        result += bytes([byte])
+        cont_loop = integer != 0
+
+    return result

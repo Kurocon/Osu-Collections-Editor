@@ -570,10 +570,12 @@
     </property>
     <addaction name="action_open"/>
     <addaction name="action_save"/>
+    <addaction name="action_save_as"/>
     <addaction name="action_close"/>
     <addaction name="separator"/>
-    <addaction name="action_exit"/>
+    <addaction name="action_settings"/>
     <addaction name="separator"/>
+    <addaction name="action_exit"/>
    </widget>
    <widget class="QMenu" name="menu_help">
     <property name="statusTip">
@@ -628,6 +630,9 @@
    <property name="text">
     <string>Save</string>
    </property>
+   <property name="statusTip">
+    <string>Save collection</string>
+   </property>
   </action>
   <action name="action_close">
    <property name="enabled">
@@ -635,6 +640,25 @@
    </property>
    <property name="text">
     <string>Close</string>
+   </property>
+   <property name="statusTip">
+    <string>Close open collection</string>
+   </property>
+  </action>
+  <action name="action_save_as">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Save as...</string>
+   </property>
+   <property name="statusTip">
+    <string>Save collection as...</string>
+   </property>
+  </action>
+  <action name="action_settings">
+   <property name="text">
+    <string>Settings</string>
    </property>
   </action>
  </widget>

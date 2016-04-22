@@ -13,12 +13,14 @@ def match_songs_to_collections(songs, collections):
     """
 
     log = logging.getLogger(__name__)
-    log.debug("Matching {} songs and {} collections".format(len(songs.songs), collections.collection_count))
+    log.debug("Matching {} songs and {} collections".format(len(songs.songs), len(collections.collections)))
 
     # Construct dictionary of {"hash": ("beatmap", "mapset")}
     lookup_dict = {}
     for song in songs.songs:
-        for diff in song.difficulties:
+        # Create a deep copy of the song
+        song_dc = song.deep_copy()
+        for diff in song_dc.difficulties:
             lookup_dict[diff.hash] = (diff, song)
 
     matched_count = 0
@@ -43,17 +45,17 @@ def match_songs_to_collections(songs, collections):
             for diff in mapset.difficulties:
                 col_songs.append(diff)
 
-        # Remove all of the difficulties actually present from the list of diffs
-        for collmap in collection.beatmaps:
-            if collmap.difficulty in col_songs:
-                col_songs.remove(collmap.difficulty)
-
-        # Remove all left over songs in the list from the mapsets in the collection
-        for m in collection.mapsets:
-            diffs = m.difficulties
-            for d in diffs:
-                if d in col_songs:
-                    m.difficulties.remove(d)
+        # # Remove all of the difficulties actually present from the list of diffs
+        # for collmap in collection.beatmaps:
+        #     if collmap.difficulty in col_songs:
+        #         col_songs.remove(collmap.difficulty)
+        #
+        # # Remove all left over songs in the list from the mapsets in the collection
+        # for m in collection.mapsets:
+        #     diffs = m.difficulties
+        #     for d in diffs:
+        #         if d in col_songs:
+        #             m.difficulties.remove(d)
 
     log.debug("Matching done. {} matched and {} unmatched.".format(matched_count, unmatched_count))
 

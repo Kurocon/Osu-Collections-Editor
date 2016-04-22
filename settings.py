@@ -1,4 +1,6 @@
 import logging
+import json
+import os
 
 
 class Settings:
@@ -10,14 +12,39 @@ class Settings:
 
     def __init__(self):
         self.log = logging.getLogger(__name__)
-        self.settings = {
-            'osu_api_key': "11a8e6022b8146bbcaf2a9085fddf5232feaaee2",
-            'default_songs_dir': "/data/OwnCloud/Osu Songs",
-            'default_collection_file': "/data/OwnCloud/Osu Program/collection.db"
+        self.default_settings = {
+            'osu_api_key': "",
+            'download_from_api': 0,
+            'default_songs_dir': "",
+            'default_collection_file': "",
+            'show_shutdown_dialog': True,
+            'show_api_explanation_dialog': True,
+            'show_collection_delete_dialog': True,
+            'show_remove_song_dialog': True,
+            'show_remove_mapset_dialog': True,
         }
 
-    def get_setting(self, name):
-        res = self.settings.get(name, None)
+        needs_save = False
+
+        if os.path.exists('settings.json'):
+            with open('settings.json', 'r') as f:
+                self.settings = json.load(f)
+        else:
+            self.settings = {}
+            needs_save = True
+
+        # Check if any default settings are missing and set them.
+        for key, value in self.default_settings.items():
+            if key not in self.settings.keys():
+                self.settings[key] = value
+                needs_save = True
+
+        if needs_save:
+            with open('settings.json', 'w') as f:
+                json.dump(self.settings, f, sort_keys=True, indent=4)
+
+    def get_setting(self, name, default=None):
+        res = self.settings.get(name, default)
         self.log.debug("Getting setting {}: {}".format(name, res))
         return res
 

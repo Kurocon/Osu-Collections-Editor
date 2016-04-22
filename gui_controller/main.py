@@ -4,12 +4,20 @@ import time
 from PyQt5 import QtWidgets, QtCore
 import gui.main
 import settings
+from gui_controller.about import About
+from gui_controller.addsongs import AddSongs
 from gui_controller.beatmapitem import BeatmapItem
 from gui_controller.loading import Loading
+from gui_controller.loading_addsong import LoadingAddSong
+from gui_controller.loading_api import LoadingApi
 from gui_controller.startup import Startup
+from gui_controller.settings import Settings as SettingsUI
 
 import util.song_collection_matcher as scm
-from util.collections_parser import Collection
+import util.osu_api as oa
+import util.collections_parser as cp
+from util.collections_parser import Collection, CollectionMap
+from util.osu_parser import Difficulty2, Song
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -24,11 +32,13 @@ class MainWindow(QtWidgets.QMainWindow):
     :type songs: util.osu_parser.Songs
     :type current_collection: util.collections_parser.Collection
     :type settings: settings.Settings
+    :type unmatched_maps: list[util.collections_parser.CollectionMap]
     """
 
     do_load = QtCore.pyqtSignal()
     do_match = QtCore.pyqtSignal()
     load_done = QtCore.pyqtSignal()
+    do_settings_save = QtCore.pyqtSignal()
 
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -50,7 +60,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Menu action handlers
         self.ui.action_open.triggered.connect(self.open)
         self.ui.action_save.triggered.connect(self.save)
-        self.ui.action_close.triggered.connect(self.close)
+        self.ui.action_save_as.triggered.connect(self.save_as)
+        self.ui.action_close.triggered.connect(self.close_collection)
+        self.ui.action_settings.triggered.connect(self.settings_dialog)
         self.ui.action_exit.triggered.connect(self.close)
         self.ui.action_about.triggered.connect(self.about)
 
@@ -192,10 +204,71 @@ class MainWindow(QtWidgets.QMainWindow):
             self.do_load.emit()
 
     def save(self):
-        self.log.info("UNIMPLEMENTED: Save")
+        self.log.info("Saving collection database to {}".format(self.collection_file))
+        cp.save_collection(self.collections, self.collection_file)
+        self.ui.statusbar.showMessage("Saved collections to {}.".format(self.collection_file))
 
-    def close(self):
-        self.log.info("UNIMPLEMENTED: Close")
+    def save_as(self):
+        file = QtWidgets.QFileDialog.getSaveFileName(self, "Choose save location for collection.db file",
+                                                     self.collection_file,
+                                                     "Osu Collections (collection.db);;All files (*)")
+
+        if file[0] != '':
+            cp.save_collection(self.collections, file[0])
+            self.ui.statusbar.showMessage("Saved collections to {}.".format(file[0]))
+        else:
+            self.ui.statusbar.showMessage("Save cancelled.")
+
+    def settings_dialog(self):
+        u = SettingsUI()
+        if u.exec_():  # True if dialog is accepted
+            self.ui.statusbar.showMessage("Settings saved.")
+
+    def close_collection(self):
+        # Clear the collection and songs lists
+        self.ui.collection_list.clear()
+        self.ui.songs_list.clear()
+
+        # Disable buttons in file menus
+        for a in [self.ui.action_save, self.ui.action_save_as, self.ui.action_close]:
+            a.setEnabled(False)
+
+        # Disable buttons in ui
+        for a in [self.ui.add_collection_button,
+                  self.ui.remove_collection_button,
+                  self.ui.rename_collection_button,
+                  self.ui.options_collection_button,
+                  self.ui.up_collection_button,
+                  self.ui.down_collection_button,
+                  self.ui.songs_add_button,
+                  self.ui.songs_remove_button,
+                  self.ui.songs_remove_set_button,
+                  self.ui.songs_options_button]:
+            a.setEnabled(False)
+
+        # Disable right click menus
+        for a in [self.action_collection_list_add,
+                  self.action_collection_list_remove,
+                  self.action_collection_list_rename,
+                  self.action_collection_list_moveup,
+                  self.action_collection_list_movedown,
+                  self.action_collection_options_add,
+                  self.action_collection_options_remove,
+                  self.action_collection_options_rename,
+                  self.action_collection_options_moveup,
+                  self.action_collection_options_movedown,
+                  self.action_song_list_add,
+                  self.action_song_list_remove,
+                  self.action_song_list_remove_set,
+                  self.action_song_options_add,
+                  self.action_song_options_remove,
+                  self.action_song_options_remove_set]:
+            a.setEnabled(False)
+
+        # Reset text fields
+        self.ui.collection_label.setText("No collection.db loaded.")
+        self.ui.songs_label.setText("No collection selected.")
+        self.ui.statusbar.showMessage("Nothing loaded. Open something from the 'File' menu.")
 
     def _do_load(self):
         self.log.debug("Opening collection {}...".format(self.collection_file))
@@ -219,26 +292,59 @@ class MainWindow(QtWidgets.QMainWindow):
         # Notify if there are unmatched maps, to look them up online
         if unmatched_c != 0:
             self.log.debug("There are {} unmatched maps. Asking if they need to be looked up".format(unmatched_c))
-            if self.settings.get_setting("osu_api_key"):
-                reply = QtWidgets.QMessageBox.question(self, 'Unmatched maps found',
-                                           "{} beatmaps could not be matched. Would you like me to try to find their details using the osu! API?".format(unmatched_c),
-                                           QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                                           QtWidgets.QMessageBox.No)
 
-                search_online = reply == QtWidgets.QMessageBox.Yes
+            try:
+                setting_api_explanation = bool(self.settings.get_setting("show_api_explanation_dialog", True))
+            except ValueError:
+                self.settings.set_setting("show_api_explanation_dialog", True)
+                setting_api_explanation = True
+
+            try:
+                setting_api_ask = int(self.settings.get_setting("download_from_api", 0))
+            except ValueError:
+                self.settings.set_setting("download_from_api", 0)
+                setting_api_ask = 0
+
+            if self.settings.get_setting("osu_api_key"):
+                if setting_api_ask == 0:
+                    reply = QtWidgets.QMessageBox.question(self, 'Unmatched maps found',
+                                                           "<p>{} beatmaps could not be matched. Would you like me to try to find their details using the osu! API?</p>".format(unmatched_c),
+                                                           QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                                                           QtWidgets.QMessageBox.No)
+
+                    search_online = reply == QtWidgets.QMessageBox.Yes
+                elif setting_api_ask == 1:
+                    search_online = True
+                else:
+                    search_online = False
 
                 if search_online:
-                    self.log.info("Looking up beatmaps")
-                    QtWidgets.QMessageBox.information(self, 'Notification',
-                                                      "Beatmaps loaded from the osu! API will be indicated with a blue icon")
+                    self.log.debug("Matching unmatched beatmaps with API...")
+
+                    # Create loading dialog
+                    l = LoadingApi(self.collections, self.unmatched_maps)
+                    l.exec_()
+
+                    # Get result from dialog
+                    self.log.debug("Dialog returned. Getting results")
+                    identified_count = l.identified_count
+                    self.collections = l.collections
+                    self.unmatched_maps = l.unmatched_maps
+
+                    if setting_api_explanation:
+                        QtWidgets.QMessageBox.information(self, 'Notification',
+                                                          "<p>I could identify {} maps using the API. {} remain unmatched.</p>"
+                                                          "<p><i>Beatmaps loaded from the osu! API will be indicated with a blue icon. Unmatched beatmaps will be indicated with a yellow icon and placed in a separate entry at the bottom of each collection.</i></p>".format(identified_count, len(self.unmatched_maps)))
                 else:
                     self.log.info("NOT looking up beatmaps")
-                    QtWidgets.QMessageBox.information(self, 'Notification',
-                                                      "Unmatched beatmaps will be indicated with a yellow icon")
+                    if setting_api_explanation:
+                        QtWidgets.QMessageBox.information(self, 'Notification',
+                                                          "<p>Unmatched beatmaps will be indicated with a yellow icon and placed in a separate entry at the bottom of each collection.</p>")
 
             else:
-                QtWidgets.QMessageBox.warning(self, 'Unmatched maps found',
-                                              "{} beatmaps could not be matched. I could find their details via the osu! API, but you don't have your API key filled in in the settings.".format(unmatched_c))
+                if setting_api_ask == 0 or setting_api_ask == 1:
+                    QtWidgets.QMessageBox.warning(self, 'Unmatched maps found',
+                                                  "<p>{} beatmaps could not be matched. I could find their details via the osu! API, but you don't have an API key filled in in the settings.</p>".format(unmatched_c))
 
         self.load_done.emit()
 
@@ -259,25 +365,30 @@ class MainWindow(QtWidgets.QMainWindow):
                   self.action_collection_options_add]:
             a.setEnabled(True)
 
-        # Enable the "Save" and "Close" buttons in the "File" menu
-        for a in [self.ui.action_save, self.ui.action_close]:
+        # Enable the "Save", "Save as" and "Close" buttons in the "File" menu
+        for a in [self.ui.action_save, self.ui.action_save_as, self.ui.action_close]:
             a.setEnabled(True)
 
         self.ui.collection_label.setText(self.collection_file)
         self.ui.statusbar.showMessage(
-            "Loaded {} collections and {} songs.".format(self.collections.collection_count, len(self.songs.songs)))
+            "Loaded {} collections and {} songs.".format(len(self.collections.collections), len(self.songs.songs)))
 
     def closeEvent(self, event):
-        self.log.info("Quitting")
-        reply = QtWidgets.QMessageBox.question(self, 'Closing program',
-                                               "Are you sure you want to quit?",
-                                               QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                                               QtWidgets.QMessageBox.No)
+        try:
+            show_dialog = bool(self.settings.get_setting("show_shutdown_dialog", True))
+        except ValueError:
+            self.settings.set_setting("show_shutdown_dialog", True)
+            show_dialog = True
 
-        if reply == QtWidgets.QMessageBox.Yes:
-            event.accept()
+        if show_dialog:
+            if QtWidgets.QMessageBox.question(None, 'Closing program', "Are you sure you want to quit?",
+                                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                                    QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
+                event.accept()
+            else:
+                event.ignore()
         else:
-            event.ignore()
+            event.accept()
 
     def collection_list_clicked(self, item):
         # Find out which collection was clicked
@@ -462,13 +573,22 @@ class MainWindow(QtWidgets.QMainWindow):
         current_collection = self.ui.collection_list.currentItem()
         oldname = current_collection.text()
 
-        # TODO: Add setting to disable confirmation dialog
-        reply = QtWidgets.QMessageBox.question(self, 'Really remove this collection?',
-                                               "Do you really want to delete the collection \"{}\"? This can only be undone by reloading the collection.".format(oldname),
-                                               QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                                               QtWidgets.QMessageBox.No)
+        try:
+            setting_collection_delete = bool(self.settings.get_setting("show_collection_delete_dialog", True))
+        except ValueError:
+            self.settings.set_setting("show_collection_delete_dialog", True)
+            setting_collection_delete = True
 
-        if reply == QtWidgets.QMessageBox.Yes:
+        if setting_collection_delete:
+            reply = QtWidgets.QMessageBox.question(self, 'Really remove this collection?',
+                                                   "Do you really want to delete the collection \"{}\"? This can only be undone by reloading the collection.".format(oldname),
+                                                   QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                                                   QtWidgets.QMessageBox.No)
+            do_delete = reply == QtWidgets.QMessageBox.Yes
+        else:
+            do_delete = True
+
+        if do_delete:
             # Remove collection from backend
             col = self.collections.get_collection(oldname)
             self.collections.collections.remove(col)
@@ -576,7 +696,61 @@ class MainWindow(QtWidgets.QMainWindow):
             self.log.info("Collection is on the bottom, cannot move down.")
 
     def add_song(self):
-        self.log.info("UNIMPLEMENTED: Add_Song")
+        # Create loading dialog
+        l = LoadingAddSong()
+        l.open()
+        l.text.emit("Loading song list...")
+
+        u = AddSongs(self.current_collection.name, self.songs, l)
+        if u.exec_():  # True if dialog is accepted
+            # Get the current addsongs_list contents
+            asl = u.ui.addsongs_list
+            toplevels = [asl.topLevelItem(i) for i in range(asl.topLevelItemCount())]
+
+            for tl in toplevels:
+                # Get children
+                children = [tl.child(i) for i in range(tl.childCount())]
+                for child in children:
+                    widget = asl.itemWidget(child, 0)
+                    diff_hash = widget.difficulty.hash
+                    res = self.songs.get_song(diff_hash)
+                    if res:
+                        song, diff = res
+                        self.log.debug("Adding song {}, diff {} to collection {}".format(song, diff, self.current_collection.name))
+
+                        found_mapset = None
+
+                        # Add mapset with this song if it is not in there, add song if it is there
+                        for mapset in self.current_collection.mapsets:
+                            if (song.difficulties[0].name, song.difficulties[0].artist, song.difficulties[0].mapper) == (mapset.difficulties[0].name, mapset.difficulties[0].artist, mapset.difficulties[0].mapper):
+                                if diff.hash not in [i.hash for i in mapset.difficulties]:
+                                    mapset.add_difficulty(diff)
+                                    found_mapset = mapset
+                                    self.log.debug("Added song to mapset {}".format(mapset))
+                                    break
+                        else:
+                            mset = Song()
+                            mset.add_difficulty(diff)
+                            found_mapset = mset
+                            self.current_collection.mapsets.append(mset)
+                            self.log.debug("Added song to new mapset {}".format(mset))
+
+                        # Add difficulty
+                        if self.current_collection.find_collectionmap_by_difficulty(diff) is None:
+                            cmap = CollectionMap()
+                            cmap.hash = diff.hash
+                            cmap.difficulty = diff
+                            cmap.mapset = found_mapset
+                            self.current_collection.beatmaps.append(cmap)
+                            self.log.debug(
+                                "Added difficulty to collection {}'s beatmaps".format(self.current_collection.name))
+
+                    else:
+                        self.log.warning("Could not find difficulty for {}".format(diff_hash))
+
+            # Redraw the current collection tree
+            self.log.debug("Simulating click on the current collection to refresh the collection list.")
+            self.collection_list_clicked(self.ui.collection_list.currentItem())
 
     def remove_song(self):
         selected_items = self.ui.songs_list.selectedItems()
@@ -618,47 +792,24 @@ class MainWindow(QtWidgets.QMainWindow):
                         else:
                             self.log.warning("Found weird TreeWidgetItem at 2 deep in the SongsList: {}".format(child))
 
-            # TODO: Add setting to disable confirmation dialog
-            reply = QtWidgets.QMessageBox.question(self, 'Really remove songs from collection?',
-                                                   "<p>Do you really want to delete these songs from the collection \"{}\"? This can only be undone by reloading the collection database.</p>"
-                                                   "<ul>{}</ul>".format(self.current_collection.name, "".join(["<li>{}</li>".format(i[0] if isinstance(i[0], str) else "{} - {} [{}] ({})".format(i[0].artist, i[0].name, i[0].difficulty, i[0].mapper)) for i in songs_to_remove])),
-                                                   QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                                                   QtWidgets.QMessageBox.No)
+            try:
+                setting_song_delete = bool(self.settings.get_setting("show_remove_song_dialog", True))
+            except ValueError:
+                self.settings.set_setting("show_remove_song_dialog", True)
+                setting_song_delete = True
 
-            if reply == QtWidgets.QMessageBox.Yes:
-                # Remove all of the songs from the collection
-                for song in songs_to_remove:
-                    # If the song is a string, it is an unmatched song
-                    if isinstance(song[0], str):
-                        # Remove from backend
-                        unm = self.current_collection.get_unmatched_song(song[0])
-                        self.current_collection.unmatched.remove(unm)
+            if setting_song_delete:
+                reply = QtWidgets.QMessageBox.question(self, 'Really remove songs from collection?',
+                                                       "<p>Do you really want to delete these songs from the collection \"{}\"? This can only be undone by reloading the collection database.</p>"
+                                                       "<ul>{}</ul>".format(self.current_collection.name, "".join(["<li>{}</li>".format(i[0] if isinstance(i[0], str) else "{} - {} [{}] ({})".format(i[0].artist, i[0].name, i[0].difficulty, i[0].mapper)) for i in songs_to_remove])),
+                                                       QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                                                       QtWidgets.QMessageBox.No)
+                do_song_remove = reply == QtWidgets.QMessageBox.Yes
+            else:
+                do_song_remove = True
 
-                        # Remove from frontend
-                        item = song[1]
-                        parent = item.parent()
-                        parent.takeChild(parent.indexOfChild(item))
-
-                        # If there are no more items in the mapset item, remove it, too.
-                        if parent.childCount() == 0:
-                            self.ui.songs_list.takeTopLevelItem(self.ui.songs_list.indexOfTopLevelItem(parent))
-
-                    # Else, it is a normal song
-                    else:
-                        # Remove from backend
-                        self.current_collection.remove_song(song[0])
-
-                        # Remove from frontend
-                        item = song[1]
-                        parent = item.parent()
-                        parent.takeChild(parent.indexOfChild(item))
-
-                        # If there are no more items in the mapset item, remove it, too.
-                        if parent.childCount() == 0:
-                            self.ui.songs_list.takeTopLevelItem(self.ui.songs_list.indexOfTopLevelItem(parent))
-
-                self.ui.statusbar.showMessage("Removed {} songs from {}.".format(len(songs_to_remove), self.current_collection.name))
-                self.log.info("Removed {} songs from {}.".format(len(songs_to_remove), self.current_collection.name))
+            if do_song_remove:
+                self._remove_songs(songs_to_remove)
 
     def remove_set_song(self):
         selected_items = self.ui.songs_list.selectedItems()
@@ -700,53 +851,56 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         self.log.warning("Found weird TreeWidgetItem at 2 deep in the SongsList: {}".format(child))
 
-            # TODO: Add setting to disable confirmation dialog
-            reply = QtWidgets.QMessageBox.question(self, 'Really remove songs from collection?',
+            try:
+                setting_song_delete = bool(self.settings.get_setting("show_remove_song_dialog", True))
+            except ValueError:
+                self.settings.set_setting("show_remove_song_dialog", True)
+                setting_song_delete = True
+
+            if setting_song_delete:
+                reply = QtWidgets.QMessageBox.question(self, 'Really remove songs from collection?',
                                                    "<p>Do you really want to delete these songs from the collection \"{}\"? This can only be undone by reloading the collection database.</p>"
                                                    "<ul>{}</ul>".format(self.current_collection.name, "".join(["<li>{}</li>".format(i[0] if isinstance(i[0], str) else "{} - {} [{}] ({})".format(i[0].artist, i[0].name, i[0].difficulty, i[0].mapper)) for i in songs_to_remove])),
                                                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                                                    QtWidgets.QMessageBox.No)
+                do_song_remove = reply == QtWidgets.QMessageBox.Yes
+            else:
+                do_song_remove = True
 
             # If yes, remove all songs from the remove list
-            if reply == QtWidgets.QMessageBox.Yes:
-                # Remove all of the songs from the collection
-                for song in songs_to_remove:
-                    # If the song is a string, it is an unmatched song
-                    if isinstance(song[0], str):
-                        # Remove from backend
-                        unm = self.current_collection.get_unmatched_song(song[0])
-                        self.current_collection.unmatched.remove(unm)
+            if do_song_remove:
+                self._remove_songs(songs_to_remove)
 
-                        # Remove from frontend
-                        item = song[1]
-                        parent = item.parent()
-                        parent.takeChild(parent.indexOfChild(item))
+    def _remove_songs(self, songs_to_remove):
+        # Remove all of the songs from the collection
+        for song in songs_to_remove:
+            # If the song is a string, it is an unmatched song
+            if isinstance(song[0], str):
+                # Remove from backend
+                unm = self.current_collection.get_unmatched_song(song[0])
+                self.current_collection.unmatched.remove(unm)
 
-                        # If there are no more items in the mapset item, remove it, too.
-                        if parent.childCount() == 0:
-                            self.ui.songs_list.takeTopLevelItem(self.ui.songs_list.indexOfTopLevelItem(parent))
+            # Else, it is a normal song
+            else:
+                # Remove from backend
+                self.current_collection.remove_song(song[0])
 
-                    # Else, it is a normal song
-                    else:
-                        # Remove from backend
-                        self.current_collection.remove_song(song[0])
+            # Remove from frontend
+            item = song[1]
+            parent = item.parent()
+            parent.takeChild(parent.indexOfChild(item))
 
-                        # Remove from frontend
-                        item = song[1]
-                        parent = item.parent()
-                        parent.takeChild(parent.indexOfChild(item))
+            # If there are no more items in the mapset item, remove it, too.
+            if parent.childCount() == 0:
+                self.ui.songs_list.takeTopLevelItem(self.ui.songs_list.indexOfTopLevelItem(parent))
 
-                        # If there are no more items in the mapset item, remove it, too.
-                        if parent.childCount() == 0:
-                            self.ui.songs_list.takeTopLevelItem(self.ui.songs_list.indexOfTopLevelItem(parent))
+        # Save changes in global collections list
+        self.collections.set_collection(self.current_collection.name, self.current_collection)
 
-                self.ui.statusbar.showMessage("Removed {} songs from {}.".format(len(songs_to_remove), self.current_collection.name))
-                self.log.info("Removed {} songs from {}.".format(len(songs_to_remove), self.current_collection.name))
+        self.ui.statusbar.showMessage("Removed {} songs from {}.".format(len(songs_to_remove),
+                                                                         self.current_collection.name))
+        self.log.info("Removed {} songs from {}.".format(len(songs_to_remove), self.current_collection.name))
 
     def about(self):
-        self.log.critical("ABOUT")
-        QtWidgets.QMessageBox.information(self, 'About Osu! Collections Editor',
-                                          "<h3>Osu! Collections Editor</h3>"
-                                          "<p>OCE is created by Kurocon.</p>"
-                                          "<p><a href=\"http://kevinalberts.nl/\">My website</a></p>"
-                                          "<p><a href=\"https://gitlab.kurocon.nl/Kurocon/OsuCollectionsEditor/\">Source code</a></p>")
+        about_dialog = About()
+        about_dialog.exec_()

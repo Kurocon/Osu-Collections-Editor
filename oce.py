@@ -8,6 +8,13 @@ from gui_controller.startup import Startup
 from gui_controller.main import MainWindow
 import sys
 
+# Version is in the format {release}.{subrelease}{a|b|g}{a,b,g number}
+# Where a is alpha, b is beta, g is gamma, nothing is release
+# a,b,g number is the number of the alpha/beta/gamma release.
+# Releases don't need to have a number, they can just be version 1.0, 2.4, etc.
+__version__ = "1.0"
+__build__ = 100
+
 
 def main():
     # Add Interrupt handler
@@ -37,9 +44,22 @@ def startup():
 def sigint_handler(*args):
     """Handler for the SIGINT signal."""
     sys.stderr.write('\r')
-    if QMessageBox.question(None, 'Stopping', "Are you sure you want to quit?",
-                            QMessageBox.Yes | QMessageBox.No,
-                            QMessageBox.No) == QMessageBox.Yes:
+
+    from settings import Settings
+    s = Settings.get_instance()
+
+    try:
+        show_dialog = bool(s.get_setting("show_shutdown_dialog", True))
+    except ValueError:
+        s.set_setting("show_shutdown_dialog", True)
+        show_dialog = True
+
+    if show_dialog:
+        if QMessageBox.question(None, 'Stopping', "Are you sure you want to quit?",
+                                QMessageBox.Yes | QMessageBox.No,
+                                QMessageBox.No) == QMessageBox.Yes:
+            QApplication.quit()
+    else:
         QApplication.quit()
 
 if __name__ == "__main__":

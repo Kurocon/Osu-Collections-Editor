@@ -2,6 +2,7 @@ import hashlib
 import os
 import re
 import logging
+import traceback
 
 log = logging.getLogger(__name__)
 
@@ -138,6 +139,12 @@ class Difficulty:
 
         return cs+od+hp
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "Diff: {} - {} ({}) [{}]".format(self.get_artist(), self.get_title(), self.get_creator(), self.get_version())
+
     @classmethod
     def from_file(cls, filepath):
         return cls(filepath, parse_osu_file(filepath))
@@ -160,6 +167,18 @@ class Difficulty2:
         self.od = 0.0
         self.hash = ""
         self.from_api = False
+
+    def deep_copy(self):
+        res = Difficulty2("")
+        for attr in ["path", "name", "artist", "mapper", "difficulty", "ar", "cs", "hp", "od", "hash", "from_api"]:
+            setattr(res, attr, getattr(self, attr))
+        return res
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "Diff2: {} - {} ({}) [{}]".format(self.artist, self.name, self.mapper, self.difficulty)
 
     @classmethod
     def from_file(cls, path):
@@ -204,6 +223,28 @@ class Song:
     def add_difficulty(self, difficulty):
         self.difficulties.append(difficulty)
 
+    def deep_copy(self):
+        """
+        :rtype: Song
+        """
+        res = Song()
+
+        if len(self.difficulties) == 0:
+            print("Copying song with 0 diffs!")
+
+        # Create deep copies of the diffs and add them
+        for d in self.difficulties:
+            d_dc = d.deep_copy()
+            res.add_difficulty(d_dc)
+
+        return res
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "Song ({} difficulties): {}".format(len(self.difficulties), self.difficulties)
+
 
 class Songs:
     """
@@ -211,8 +252,11 @@ class Songs:
     """
     def __init__(self):
         self.songs = []
+        self.log = logging.getLogger(__name__)
 
     def add_song(self, song):
+        if not song.difficulties:
+            self.log.warning("An empty song was added!")
         self.songs.append(song)
 
     def get_song(self, song_hash):
@@ -229,6 +273,12 @@ class Songs:
                     return song, diff
 
         return None
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "Songs: {}".format(self.songs)
 
 
 def parse_osu_file(path):
@@ -326,11 +376,11 @@ def parse_osu_file(path):
 
 
 def md5(fname):
-    hash = hashlib.md5()
+    h = hashlib.md5()
     with open(fname, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
-            hash.update(chunk)
-    return hash.hexdigest()
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def load_songs_from_dir(directory):
@@ -344,12 +394,17 @@ def load_songs_from_dir(directory):
         difficulties = song_dirs.get(song_str)
         sorted_difficulties = sorted(difficulties)
 
+        if not difficulties:
+            log.warning("Song {} has no difficulties, skipping!".format(song_str))
+            continue
+
+
         for difficulty_str in sorted_difficulties:
             try:
-                difficulty = Difficulty2.from_file("/".join([directory, song_str, difficulty_str]), difficulty_str[:-4])
+                difficulty = Difficulty2.from_file("/".join([directory, song_str, difficulty_str]))
                 song.add_difficulty(difficulty)
-            except OsuBeatmapVersionTooOldException or OsuFileFormatException:
-                pass
+            except OsuBeatmapVersionTooOldException or OsuFileFormatException as e:
+                log.warning("Something was wrong with the beatmap {}. The error was: {}".format(difficulty_str, e))
 
         songs.add_song(song)
 
@@ -373,12 +428,20 @@ def load_songs_from_dir_gui(directory, dialog):
         difficulties = song_dirs.get(song_str)
         sorted_difficulties = sorted(difficulties)
 
+        if not difficulties:
+            log.warning("Song {} has no difficulties, skipping!".format(song_str))
+            continue
+
         for difficulty_str in sorted_difficulties:
             try:
                 difficulty = Difficulty2.from_file("/".join([directory, song_str, difficulty_str]))
                 song.add_difficulty(difficulty)
-            except OsuBeatmapVersionTooOldException or OsuFileFormatException:
-                pass
+            except OsuBeatmapVersionTooOldException or OsuFileFormatException as e:
+                log.warning("Something was wrong with the beatmap {}. The error was: {}".format(difficulty_str, e))
+
+        if not song.difficulties:
+            log.warning("Song {} has no difficulties, skipping!".format(song_str))
+            continue
 
         songs.add_song(song)
         num_done += 1
