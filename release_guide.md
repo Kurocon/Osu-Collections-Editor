@@ -1,4 +1,4 @@
-`OCE Release Guide
+OCE Release Guide
 -----------------
 
 How to release a new version of OCE:
@@ -10,8 +10,9 @@ How to release a new version of OCE:
 5. Install PyInstaller into the same python environment as you develop OCE in.
    (pip install pyinstaller)
 6. Open a terminal in your OCE development folder and activate your python environment.
-7. Run the following command: "pyinstaller oce.py" to generate the executable.
-8. Copy over some resources to the new build:
-logging.conf to build/oce/logging.conf
-icons folder to build/oce/icons
-9. Test the application by running oce in the build/oce directory
+7. Run the following command: "pyinstaller oce.spec" to generate the executables from the specifications file.
+This will create two directories, "build" and "dist". "build" is a temporary directory for build files. "dist" is the output dir.
+In the "dist" directory you will find directories for the normal version of OCE and the portable version.
+8. Test the application by running oce in each of the directories in "dist"
+9. Zip both of the versions of the application and name them "OCE_<OS>_vx.x" for the normal build and "OCE_<OS>_Portable_vx.x" for the portable build, where <OS> is the operating system the build is for (e.g. Linux), and vx.x is the version (e.g. v1.1b4)
+10. Upload the archives as releases to the repository
