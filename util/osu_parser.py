@@ -143,7 +143,8 @@ class Difficulty:
         return self.__str__()
 
     def __str__(self):
-        return "Diff: {} - {} ({}) [{}]".format(self.get_artist(), self.get_title(), self.get_creator(), self.get_version())
+        return "Diff: {} - {} ({}) [{}]".format(self.get_artist(), self.get_title(),
+                                                self.get_creator(), self.get_version())
 
     @classmethod
     def from_file(cls, filepath):
@@ -345,7 +346,8 @@ def parse_osu_file(path):
 
             # Parse Difficulty values
             if currentsection == "Difficulty":
-                if key in ["ApproachRate", "CircleSize", "HPDrainRate", "OverallDifficulty", "SliderMultiplier", "SliderTickRate"]:
+                if key in ["ApproachRate", "CircleSize", "HPDrainRate",
+                           "OverallDifficulty", "SliderMultiplier", "SliderTickRate"]:
                     sectiondata[key] = float(value)
                 else:
                     sectiondata[key] = value
@@ -397,7 +399,6 @@ def load_songs_from_dir(directory):
         if not difficulties:
             log.warning("Song {} has no difficulties, skipping!".format(song_str))
             continue
-
 
         for difficulty_str in sorted_difficulties:
             try:

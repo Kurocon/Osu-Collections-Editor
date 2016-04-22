@@ -354,8 +354,8 @@ def save_collection(collection, location):
         fobj.write(get_int(len(col.beatmaps)))
 
         # Then for all beatmaps in the collection, write the MD5 hashes.
-        for map in col.beatmaps:
-            fobj.write(get_string(map.hash))
+        for m in col.beatmaps:
+            fobj.write(get_string(m.hash))
 
     # Close the file
     fobj.close()

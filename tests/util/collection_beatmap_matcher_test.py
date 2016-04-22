@@ -39,7 +39,10 @@ if __name__ == "__main__":
     ccount = collections.collection_count
     scount = sum([i.beatmap_count for i in collections.collections])
 
-    print("There are {} collection{} with a total of {} song{} in this database.".format(ccount, "" if ccount == 1 else "s", scount, "" if scount == 1 else "s"))
+    print("There are {} collection{} with a total of {} song{} in this database.".format(ccount,
+                                                                                         "" if ccount == 1 else "s",
+                                                                                         scount,
+                                                                                         "" if scount == 1 else "s"))
     print("")
     print("------------------------------------------------------------------")
     print("")
@@ -57,7 +60,7 @@ if __name__ == "__main__":
 
         for difficulty_str in sorted_difficulties:
             try:
-                difficulty = util.osu_parser.Difficulty2.from_file("/".join([songs_path, song_str, difficulty_str]), difficulty_str[:-4])
+                difficulty = util.osu_parser.Difficulty2.from_file("/".join([songs_path, song_str, difficulty_str]))
                 song.add_difficulty(difficulty)
             except util.osu_parser.OsuBeatmapVersionTooOldException or util.osu_parser.OsuFileFormatException:
                 pass
