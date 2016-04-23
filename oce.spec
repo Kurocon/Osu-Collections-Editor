@@ -134,13 +134,32 @@ print("")
 print("Cleaning up")
 print("")
 
-try:
-    os.remove(os.path.join(DISTPATH, "oce_p"))
-except OSError:
-    pass
+# Remove portable executable on linux
+if os.path.isfile(os.path.join(DISTPATH, "oce_p")):
+    try:
+        os.remove(os.path.join(DISTPATH, "oce_p"))
+    except OSError:
+        pass
 
-try:
-    os.rename(os.path.join(DISTPATH, "oce_portable", "oce_p"), os.path.join(DISTPATH, "oce_portable", "oce"))
-except WindowsError:
-    os.remove(os.path.join(DISTPATH, "oce_portable", "oce"))
-    os.rename(os.path.join(DISTPATH, "oce_portable", "oce_p"), os.path.join(DISTPATH, "oce_portable", "oce"))
+# Remove portable executable on windows
+if os.path.isfile(os.path.join(DISTPATH, "oce_p.exe")):
+    try:
+        os.remove(os.path.join(DISTPATH, "oce_p.exe"))
+    except OSError:
+        pass
+
+# Rename the exe in the portable dir on Linux
+if os.path.isfile(os.path.join(DISTPATH, "oce_portable", "oce_p")):
+    try:
+        os.rename(os.path.join(DISTPATH, "oce_portable", "oce_p"), os.path.join(DISTPATH, "oce_portable", "oce"))
+    except WindowsError:
+        os.remove(os.path.join(DISTPATH, "oce_portable", "oce"))
+        os.rename(os.path.join(DISTPATH, "oce_portable", "oce_p"), os.path.join(DISTPATH, "oce_portable", "oce"))
+
+# Rename the exe in the portable dir on Windows
+if os.path.isfile(os.path.join(DISTPATH, "oce_portable", "oce_p.exe")):
+    try:
+        os.rename(os.path.join(DISTPATH, "oce_portable", "oce_p.exe"), os.path.join(DISTPATH, "oce_portable", "oce.exe"))
+    except WindowsError:
+        os.remove(os.path.join(DISTPATH, "oce_portable", "oce.exe"))
+        os.rename(os.path.join(DISTPATH, "oce_portable", "oce_p.exe"), os.path.join(DISTPATH, "oce_portable", "oce.exe"))
