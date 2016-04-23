@@ -30,7 +30,9 @@ class LoadingAddSong(QtWidgets.QDialog):
 
         self.ui.progressbar.setRange(0, 100)
 
-        self.thread = QtCore.QThread()
+    def keyPressEvent(self, event):
+        if event.key() not in [QtCore.Qt.Key_Escape, QtCore.Qt.Key_Alt, QtCore.Qt.Key_AltGr, QtCore.Qt.Key_F4]:
+            super(LoadingAddSong, self).keyPressEvent(event)
 
     def update_precentage(self, percentage):
         self.ui.progressbar.setValue(percentage)
