@@ -27,6 +27,17 @@ class Startup(QtWidgets.QDialog):
         self.ui.songdir_button.clicked.connect(self.browse_osudir)
         self.ui.collectionfile_button.clicked.connect(self.browse_collectionfile)
 
+        self.ui.songdir_edit.textChanged.connect(self.directory_text_changed)
+        self.ui.collectionfile_edit.textChanged.connect(self.collection_text_changed)
+
+    def directory_text_changed(self, text):
+        self.log.debug("New dir: {}".format(text))
+        self.songdir = text
+
+    def collection_text_changed(self,text):
+        self.log.debug("New file: {}".format(text))
+        self.collectionfile = text
+
     def browse_osudir(self):
         directory = QtWidgets.QFileDialog.getExistingDirectory(self, "Pick your osu! Song folder", self.ui.songdir_edit.text())
 

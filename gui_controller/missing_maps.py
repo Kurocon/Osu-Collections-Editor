@@ -82,7 +82,7 @@ class MissingMaps(QtWidgets.QDialog):
         if len(self.api_maps) == 0:
             self.ui.api_box.hide()
 
-        elif len(self.unmatched_maps) == 0:
+        if len(self.unmatched_maps) == 0:
             self.ui.unmatched_box.hide()
 
         super(MissingMaps, self).exec_()

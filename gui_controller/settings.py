@@ -29,9 +29,6 @@ class Settings(QtWidgets.QDialog):
         self.ui.song_remove_dialog.setChecked(self.settings.get_setting("show_remove_song_dialog"))
         self.ui.mapset_remove_dialog.setChecked(self.settings.get_setting("show_remove_mapset_dialog"))
 
-        self.songdir = self.settings.get_setting("default_songs_dir")
-        self.collectionfile = self.settings.get_setting("default_collection_file")
-
         # Setup handlers for buttons
         self.ui.default_songs_button.clicked.connect(self.browse_osudir)
         self.ui.default_collection_button.clicked.connect(self.browse_collectionfile)
@@ -75,7 +72,6 @@ class Settings(QtWidgets.QDialog):
 
         if directory:
             self.ui.default_songs_line.setText(directory)
-            self.songdir = directory
 
         self.log.debug("New default song dir: {}".format(self.ui.default_songs_line.text()))
 
@@ -86,6 +82,5 @@ class Settings(QtWidgets.QDialog):
 
         if file:
             self.ui.default_collection_line.setText(file[0])
-            self.collectionfile = file[0]
 
         self.log.debug("New default collection file: {}".format(self.ui.default_collection_line.text()))

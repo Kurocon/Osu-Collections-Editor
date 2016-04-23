@@ -1,6 +1,7 @@
 import threading
 from logging.config import logging
 import time
+import os
 from PyQt5 import QtWidgets, QtCore
 import gui.main
 import settings
@@ -219,9 +220,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def open(self):
         u = Startup()
-        if u.exec_():  # True if dialog is accepted
-            self.song_directory = u.songdir
-            self.collection_file = u.collectionfile
+
+        valid = False
+        load = True
+
+        while not valid:
+            if u.exec_():  # True if dialog is accepted
+                self.song_directory = u.songdir
+                self.collection_file = u.collectionfile
+
+                # Check if file and dir exist
+                if os.path.isdir(self.song_directory) and os.path.isfile(self.collection_file):
+                    valid = True
+                elif not os.path.isdir(self.song_directory):
+                    self.ui.statusbar.showMessage("Song dir {} does not exist or is not a directory.".format(self.song_directory))
+                elif not os.path.isfile(self.collection_file):
+                    self.ui.statusbar.showMessage("Collection file {} does not exist or is not a file.".format(self.collection_file))
+            else:
+                valid = True
+                load = False
+
+        if load:
             self.do_load.emit()
 
     def save(self):
