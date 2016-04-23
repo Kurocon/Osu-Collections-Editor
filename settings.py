@@ -35,7 +35,7 @@ class Settings:
         needs_save = False
 
         if os.path.exists('settings.json'):
-            with open('settings.json', 'r') as f:
+            with open('settings.json', 'r', encoding='utf8') as f:
                 self.settings = json.load(f)
         else:
             self.settings = {}
@@ -48,7 +48,7 @@ class Settings:
                 needs_save = True
 
         if needs_save:
-            with open('settings.json', 'w') as f:
+            with open('settings.json', 'w', encoding='utf8') as f:
                 json.dump(self.settings, f, sort_keys=True, indent=4)
 
     def get_setting(self, name, default=None):

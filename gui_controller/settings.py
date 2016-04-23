@@ -63,7 +63,7 @@ class Settings(QtWidgets.QDialog):
         self.settings.set_setting('show_remove_mapset_dialog', self.ui.mapset_remove_dialog.isChecked())
 
         # Export settings to file
-        with open('settings.json', 'w') as f:
+        with open('settings.json', 'w', encoding='utf8') as f:
                 json.dump(self.settings.settings, f, sort_keys=True, indent=4)
 
         self.log.info("Settings were applied.")

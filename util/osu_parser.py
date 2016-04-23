@@ -293,7 +293,7 @@ class Songs:
 def parse_osu_file(path):
     log.debug("Reading .osu file {}".format(path))
     log.debug("Opening file {}".format(path))
-    fobj = open("{}".format(path), encoding="utf8")
+    fobj = open("{}".format(path), 'r', encoding='utf8')
 
     valid = False
     data = {}
