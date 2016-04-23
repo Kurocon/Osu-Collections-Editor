@@ -25,6 +25,7 @@ class LoadingApi(QtWidgets.QDialog):
 
         self.collections = collections
         self.unmatched_maps = unmatched_maps
+        self.api_matched_maps = []
 
         self.progress.connect(self.update_precentage)
         self.current.connect(self.update_current)
@@ -65,6 +66,7 @@ class LoadApiTask(QtCore.QObject):
         super(LoadApiTask, self).__init__()
         self.collections = cols
         self.unmatched_maps = umaps
+        self.api_matched_maps = []
         self.dialog = dialog
         self.settings = settings.Settings.get_instance()
         self.log = logging.getLogger(__name__)
@@ -105,6 +107,7 @@ class LoadApiTask(QtCore.QObject):
                 diff.hash = umap.hash
                 diff.from_api = True
                 umap.from_api = True
+                diff.beatmap_id = details['beatmap_id']
 
                 self.dialog.current.emit("{} found!".format(umap.hash))
 
@@ -115,6 +118,7 @@ class LoadApiTask(QtCore.QObject):
                         # There is a mapset! Add it to the mapset and use this mapset
                         m.mapset.add_difficulty(diff)
                         umap.mapset = m.mapset
+                        umap.difficulty = diff
                         mmaps.append(umap)
                         break
                 # If the for loop ended without breaking, create a mapset for this map
@@ -123,10 +127,12 @@ class LoadApiTask(QtCore.QObject):
                     umap.mapset.add_difficulty(diff)
                     umap.mapset.beatmapset_id = int(details['beatmapset_id'])
                     self.log.debug("Created new mapset for beatpam {} - {} [{}] (beatmapset_id {})".format(diff.artist, diff.name, diff.difficulty, umap.mapset.beatmapset_id))
+                    umap.difficulty = diff
                     mmaps.append(umap)
                 # Remove the map from the unmatched maps, it is now matched.
                 identified_count += 1
                 self.unmatched_maps.remove(umap)
+                self.api_matched_maps.append(umap)
 
         # Add all maps that are now matched to the collection properly.
         self.log.debug("Adding found maps to collections...")
@@ -151,6 +157,7 @@ class LoadApiTask(QtCore.QObject):
         self.dialog.identified_count = identified_count
         self.dialog.collections = self.collections
         self.dialog.unmatched_maps = self.unmatched_maps
+        self.dialog.api_matched_maps = self.api_matched_maps
 
         # Notify we're done.
         self.dialog.done.emit()

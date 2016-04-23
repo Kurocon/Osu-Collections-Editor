@@ -4,6 +4,7 @@ import time
 from PyQt5 import QtWidgets, QtCore
 import gui.main
 import settings
+import webbrowser
 from gui_controller.about import About
 from gui_controller.addsongs import AddSongs
 from gui_controller.beatmapitem import BeatmapItem
@@ -12,6 +13,7 @@ from gui_controller.loading_addsong import LoadingAddSong
 from gui_controller.loading_api import LoadingApi
 from gui_controller.startup import Startup
 from gui_controller.settings import Settings as SettingsUI
+from gui_controller.missing_maps import MissingMaps
 
 import util.song_collection_matcher as scm
 import util.osu_api as oa
@@ -53,6 +55,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.unmatched_maps = None
         self.songs = None
         self.current_collection = None
+        self.api_matched_maps = None
 
         # Get settings instance
         self.settings = settings.Settings.get_instance()
@@ -63,6 +66,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.action_save_as.triggered.connect(self.save_as)
         self.ui.action_close.triggered.connect(self.close_collection)
         self.ui.action_settings.triggered.connect(self.settings_dialog)
+        self.ui.action_missing_beatmaps.triggered.connect(self.missing_beatmaps)
+        self.ui.action_api_match.triggered.connect(self.api_match)
         self.ui.action_exit.triggered.connect(self.close)
         self.ui.action_about.triggered.connect(self.about)
 
@@ -111,14 +116,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_song_list_add = QtWidgets.QAction("Add map/mapset", self.ui.songs_list)
         self.action_song_list_remove = QtWidgets.QAction("Remove map", self.ui.songs_list)
         self.action_song_list_remove_set = QtWidgets.QAction("Remove mapset", self.ui.songs_list)
+        self.action_song_list_download = QtWidgets.QAction("Open download page", self.ui.songs_list)
+        self.action_song_list_bloodcat = QtWidgets.QAction("Search map on bloodcat", self.ui.songs_list)
         # Add actions to menu
         self.ui.songs_list.addAction(self.action_song_list_add)
         self.ui.songs_list.addAction(self.action_song_list_remove)
         self.ui.songs_list.addAction(self.action_song_list_remove_set)
+        self.ui.songs_list.addAction(self.action_song_list_download)
+        self.ui.songs_list.addAction(self.action_song_list_bloodcat)
         # Connect to handlers
         self.action_song_list_add.triggered.connect(self.add_song)
         self.action_song_list_remove.triggered.connect(self.remove_song)
         self.action_song_list_remove_set.triggered.connect(self.remove_set_song)
+        self.action_song_list_download.triggered.connect(self.open_dl_page)
+        self.action_song_list_bloodcat.triggered.connect(self.open_bloodcat_search)
 
         # Add menu for collection list options button
         self.collection_options = QtWidgets.QMenu()
@@ -153,10 +164,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_song_options_add = QtWidgets.QAction("Add map/mapset", self.songs_options)
         self.action_song_options_remove = QtWidgets.QAction("Remove map", self.songs_options)
         self.action_song_options_remove_set = QtWidgets.QAction("Remove mapset", self.songs_options)
+        self.action_song_options_download = QtWidgets.QAction("Open download page", self.ui.songs_list)
+        self.action_song_options_bloodcat = QtWidgets.QAction("Search map on bloodcat", self.ui.songs_list)
         # Add actions to menu
         self.songs_options.addAction(self.action_song_options_add)
         self.songs_options.addAction(self.action_song_options_remove)
         self.songs_options.addAction(self.action_song_options_remove_set)
+        self.songs_options.addAction(self.action_song_options_download)
+        self.songs_options.addAction(self.action_song_options_bloodcat)
         self.ui.songs_options_button.setMenu(self.songs_options)
         self.ui.songs_options_button.setPopupMode(QtWidgets.QToolButton.InstantPopup)
         # Remove the little menu arrow
@@ -165,6 +180,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_song_options_add.triggered.connect(self.add_song)
         self.action_song_options_remove.triggered.connect(self.remove_song)
         self.action_song_options_remove_set.triggered.connect(self.remove_set_song)
+        self.action_song_options_download.triggered.connect(self.open_dl_page)
+        self.action_song_options_bloodcat.triggered.connect(self.open_bloodcat_search)
 
         # Remove the column header from the song list
         self.ui.songs_list.header().close()
@@ -183,9 +200,13 @@ class MainWindow(QtWidgets.QMainWindow):
                   self.action_song_list_add,
                   self.action_song_list_remove,
                   self.action_song_list_remove_set,
+                  self.action_song_list_download,
+                  self.action_song_list_bloodcat,
                   self.action_song_options_add,
                   self.action_song_options_remove,
-                  self.action_song_options_remove_set]:
+                  self.action_song_options_remove_set,
+                  self.action_song_options_download,
+                  self.action_song_options_bloodcat]:
             a.setEnabled(False)
 
         # Setup event handlers
@@ -224,13 +245,28 @@ class MainWindow(QtWidgets.QMainWindow):
         if u.exec_():  # True if dialog is accepted
             self.ui.statusbar.showMessage("Settings saved.")
 
+        # If a collection is open and the user has now filled in their osu api key,
+        # enabled the match with API option.
+        if self.songs is not None and self.settings.get_setting("osu_api_key"):
+            self.ui.action_api_match.setEnabled(True)
+
     def close_collection(self):
         # Clear the collection and songs lists
         self.ui.collection_list.clear()
         self.ui.songs_list.clear()
 
+        # Clear controller caches
+        self.song_directory = ""
+        self.collection_file = ""
+        self.collections = None
+        self.unmatched_maps = None
+        self.songs = None
+        self.current_collection = None
+        self.api_matched_maps = None
+
         # Disable buttons in file menus
-        for a in [self.ui.action_save, self.ui.action_save_as, self.ui.action_close]:
+        for a in [self.ui.action_save, self.ui.action_save_as, self.ui.action_close,
+                  self.ui.action_missing_beatmaps, self.ui.action_api_match]:
             a.setEnabled(False)
 
         # Disable buttons in ui
@@ -269,6 +305,57 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.collection_label.setText("No collection.db loaded.")
         self.ui.songs_label.setText("No collection selected.")
         self.ui.statusbar.showMessage("Nothing loaded. Open something from the 'File' menu.")
+
+    def missing_beatmaps(self):
+        num_api = len(self.api_matched_maps) if self.api_matched_maps is not None else 0
+        num_unmatched = len(self.unmatched_maps) if self.unmatched_maps is not None else 0
+        self.log.debug("Opening MissingMaps dialog with {} api matched maps "
+                       "and {} unmatched maps".format(num_api, num_unmatched))
+        u = MissingMaps(self.api_matched_maps, self.unmatched_maps)
+        u.exec_()
+
+    def api_match(self):
+        unmatched_c = len(self.unmatched_maps)
+
+        if unmatched_c == 0:
+            QtWidgets.QMessageBox.information(self, 'Notification',
+                                              "<p>All of your beatmaps are alredy identified.</p>")
+
+        else:
+            if self.settings.get_setting("osu_api_key"):
+                reply = QtWidgets.QMessageBox.question(self, 'Match beatmaps with the osu! API',
+                                                       "<p>You have {} unknown beatmaps. Would you like me to try to find their details using the osu! API?</p>".format(unmatched_c),
+                                                       QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                                                       QtWidgets.QMessageBox.No)
+
+                search_online = reply == QtWidgets.QMessageBox.Yes
+
+                if search_online:
+                    self.log.debug("Matching unmatched beatmaps with API...")
+
+                    # Create loading dialog
+                    l = LoadingApi(self.collections, self.unmatched_maps)
+                    l.exec_()
+
+                    # Get result from dialog
+                    self.log.debug("Dialog returned. Getting results")
+                    identified_count = l.identified_count
+                    self.collections = l.collections
+                    self.unmatched_maps = l.unmatched_maps
+                    self.api_matched_maps = l.api_matched_maps
+
+                    QtWidgets.QMessageBox.information(self, 'Notification',
+                                                      "<p>Identified {} maps using the API. {} remain unmatched.</p>"
+                                                      "<p><i>Beatmaps loaded from the osu! API will be indicated with a blue icon. Unmatched beatmaps will be indicated with a yellow icon and placed in a separate entry at the bottom of each collection.</i></p>".format(identified_count, len(self.unmatched_maps)))
+                else:
+                    self.log.info("NOT looking up beatmaps")
+                    QtWidgets.QMessageBox.information(self, 'Notification',
+                                                      "<p>Unmatched beatmaps will be indicated with a yellow icon and placed in a separate entry at the bottom of each collection.</p>")
+
+            else:
+                QtWidgets.QMessageBox.warning(self, 'Match beatmaps with the osu! API',
+                                              "<p>You have {} unknown beatmaps. I could find their details via the osu! API, but you don't have an API key filled in in the settings.</p>".format(
+                                              unmatched_c))
 
     def _do_load(self):
         self.log.debug("Opening collection {}...".format(self.collection_file))
@@ -330,6 +417,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     identified_count = l.identified_count
                     self.collections = l.collections
                     self.unmatched_maps = l.unmatched_maps
+                    self.api_matched_maps = l.api_matched_maps
 
                     if setting_api_explanation:
                         QtWidgets.QMessageBox.information(self, 'Notification',
@@ -365,9 +453,13 @@ class MainWindow(QtWidgets.QMainWindow):
                   self.action_collection_options_add]:
             a.setEnabled(True)
 
-        # Enable the "Save", "Save as" and "Close" buttons in the "File" menu
-        for a in [self.ui.action_save, self.ui.action_save_as, self.ui.action_close]:
+        # Enable the "Save", "Save as", "Close" and "Missing beatmaps buttons in the "File" menu
+        for a in [self.ui.action_save, self.ui.action_save_as, self.ui.action_close, self.ui.action_missing_beatmaps]:
             a.setEnabled(True)
+
+        # If the user's API key is set, enabled the "Match with osu! API" menu item
+        if self.settings.get_setting("osu_api_key"):
+            self.ui.action_api_match.setEnabled(True)
 
         self.ui.collection_label.setText(self.collection_file)
         self.ui.statusbar.showMessage(
@@ -544,6 +636,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 if isinstance(widget, BeatmapItem):
                     beatmaps_selected = True
                     break
+
+            # Enable the "Open dl page" menu option if there is only one map or mapset selected.
+            for a in [self.action_song_list_download,
+                      self.action_song_options_download,
+                      self.action_song_list_bloodcat,
+                      self.action_song_options_bloodcat]:
+                a.setEnabled(len(selected) == 1)
 
             # Enable remove map buttons if there are beatmaps selected
             for a in [self.ui.songs_remove_button,
@@ -907,6 +1006,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.statusbar.showMessage("Removed {} songs from {}.".format(len(songs_to_remove),
                                                                          self.current_collection.name))
         self.log.info("Removed {} songs from {}.".format(len(songs_to_remove), self.current_collection.name))
+
+    def open_dl_page(self):
+        self._open_selected_in_webpage(self.settings.OSU_BEATMAP_URL)
+
+    def open_bloodcat_search(self):
+        self._open_selected_in_webpage(self.settings.BLOODCAT_SEARCH_URL)
+
+    def _open_selected_in_webpage(self, url):
+        selected_items = self.ui.songs_list.selectedItems()
+
+        # Open the correct page based on the type of entry selected
+        if selected_items and len(selected_items) == 1:
+            item = selected_items[0]
+            widget = self.ui.songs_list.itemWidget(item, 0)
+            if not isinstance(widget, BeatmapItem):
+                # This is a mapset, get its first child to open the page of
+                item = item.child(0)
+                widget = self.ui.songs_list.itemWidget(item, 0)
+
+            if hasattr(widget.difficulty, 'beatmap_id') and widget.difficulty.beatmap_id != "":
+                formatted_url = url.format(widget.difficulty.beatmap_id)
+                self.ui.statusbar.showMessage("Opening {} in webbrowser.".format(formatted_url))
+                webbrowser.open(formatted_url)
+            else:
+                self.ui.statusbar.showMessage("Cannot search for this map.")
+
+        elif len(selected_items) == 0:
+            self.ui.statusbar.showMessage("Could not open download page. Nothing is selected.")
+        else:
+            self.ui.statusbar.showMessage("Could not open download page. Multiple maps are selected.")
 
     def about(self):
         about_dialog = About()

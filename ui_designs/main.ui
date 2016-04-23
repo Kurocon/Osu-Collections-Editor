@@ -586,7 +586,15 @@
     </property>
     <addaction name="action_about"/>
    </widget>
+   <widget class="QMenu" name="menu_tools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="action_missing_beatmaps"/>
+    <addaction name="action_api_match"/>
+   </widget>
    <addaction name="menu_file"/>
+   <addaction name="menu_tools"/>
    <addaction name="menu_help"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -659,6 +667,28 @@
   <action name="action_settings">
    <property name="text">
     <string>Settings</string>
+   </property>
+   <property name="statusTip">
+    <string>Edit application behaviour and settings.</string>
+   </property>
+  </action>
+  <action name="action_missing_beatmaps">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Missing beatmaps</string>
+   </property>
+   <property name="statusTip">
+    <string>Give a list of beatmaps which are in your collections, but not in your Songs folder.</string>
+   </property>
+  </action>
+  <action name="action_api_match">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Match with osu! API</string>
    </property>
   </action>
  </widget>

@@ -14,7 +14,8 @@ class BeatmapItem(QtWidgets.QWidget):
         self.difficulty = difficulty
 
     def string_representation(self):
-        return "{} - {} ({}) [{}]".format(self.difficulty.artist, self.difficulty.name, self.difficulty.mapper, self.difficulty.get_version())
+        return "{} - {} ({}) [{}]".format(self.difficulty.artist, self.difficulty.name,
+                                          self.difficulty.mapper, self.difficulty.difficulty)
 
     def set_name(self, name, artist=None):
         if artist:

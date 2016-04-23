@@ -25,6 +25,9 @@
        <property name="enabled">
         <bool>true</bool>
        </property>
+       <property name="toolTip">
+        <string>OCE can try to download information for missing songs via the osu! API.</string>
+       </property>
        <property name="title">
         <string>Osu! API</string>
        </property>
@@ -45,6 +48,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="api_key_get_link">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;(&lt;a href=&quot;https://osu.ppy.sh/p/api&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Get one&lt;/span&gt;&lt;/a&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="openExternalLinks">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLineEdit" name="api_key_line"/>
           </item>
          </layout>
@@ -54,7 +67,7 @@
           <item>
            <widget class="QLabel" name="download_api_label">
             <property name="text">
-             <string>Download song info from API?</string>
+             <string>Download missing song info from API?</string>
             </property>
            </widget>
           </item>
@@ -84,6 +97,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="default_folders_box">
+       <property name="toolTip">
+        <string>These values will be the default values if you open a new collection.</string>
+       </property>
        <property name="title">
         <string>Default Folders</string>
        </property>
@@ -135,6 +151,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="dialog_settings_box">
+       <property name="toolTip">
+        <string>These settings can disable confirmation dialogs across the application.</string>
+       </property>
        <property name="title">
         <string>Dialog Settings</string>
        </property>

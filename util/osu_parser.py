@@ -168,6 +168,8 @@ class Difficulty2:
         self.od = 0.0
         self.hash = ""
         self.from_api = False
+        self.api_beatmap_id = ""
+        self.beatmap_id = ""
 
     def deep_copy(self):
         res = Difficulty2("")
@@ -191,6 +193,12 @@ class Difficulty2:
         d.artist = details["Metadata"]["Artist"]
         d.mapper = details["Metadata"]["Creator"]
         d.difficulty = details["Metadata"]["Version"]
+
+        try:
+            d.beatmap_id = details["Metadata"]["BeatmapID"]
+        except KeyError:
+            pass
+
         try:
             d.ar = details["Difficulty"]["ApproachRate"]
         except KeyError:

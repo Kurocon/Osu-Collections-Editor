@@ -10,6 +10,14 @@ class Settings:
 
     _instance = None
 
+    # Static variables that are not user-changeable
+
+    # Osu beatmap lookup URL ({0} will be replaced with the beatmap id)
+    OSU_BEATMAP_URL = "https://osu.ppy.sh/b/{0}"
+    # Bloodcat beatmap search URL ({0} will be replaced with the beatmap id)
+    BLOODCAT_SEARCH_URL = "http://bloodcat.com/osu/?q={0}&c=b&s=&m="
+
+    # Dynamic settings loading from file
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.default_settings = {
