@@ -64,7 +64,9 @@ When OCE is finished loading your songs and collections, it might have found som
 
 Please note that OCE might not be able to find information for all of your missing maps, especially if they have been removed from the osu! website. You can hide these popups or disable API lookup in the [Settings](#settings).
 
-![Main screen](http://oce.kurocon.nl/images/oce.png)
+Maps which info was downloaded from the osu! API will be marked with a blue icon. Maps which are completely unknown are marked with a yellow icon.
+
+![API and missing icons](http://oce.kurocon.nl/images/main_api_missing.png)
 
 When everything is done, the main screen will show two columns. The left column will contain all your collections (if you have any), and the right will show you the songs in the currently selected collection, if you have one selected. The buttons at the bottom let you add, remove or rename collections and add or remove songs or mapsets.
 
@@ -102,7 +104,6 @@ To save all of the changes you made to your collections, click `File` followed b
 
 Finding missing songs
 ---------------------
-![The Tools menu](http://oce.kurocon.nl/images/tools.png)
 One of the features of OCE is to show you a list of maps which you have in one of your collections, but do not have in your songs folder. You can show this list by pressing the `Tools` menu, followed by `Missing beatmaps`. This dialog looks different depending on what kinds of missing songs you have.
 ![Missing unidentified beatmaps](http://oce.kurocon.nl/images/missing_unidentified_maps.png)
 If you only have unidentified missing maps (maps OCE knows nothing about), then it will show a list of the md5 hashes of those maps.
