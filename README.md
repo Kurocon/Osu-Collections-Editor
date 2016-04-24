@@ -29,7 +29,7 @@ There are two ways of installing OCE. Using the precompiled release binaries, or
 
 Release binaries
 ----------------
-You can download the releases from the GitHub releases page <add link here>. Two types of releases are available, standard and portable. 
+You can download the releases from the GitHub releases page [here](https://github.com/Kurocon/Osu-Collections-Editor/releases). Two types of releases are available, standard and portable. 
 
 The standard release is the recommended one. It contains all dependencies of OCE and is meant to run from a folder on your computer. 
 
