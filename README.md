@@ -75,10 +75,15 @@ Adding/Removing/Renaming collections
 ![Collection management](http://oce.kurocon.nl/images/collection_buttons.png)
 
 To add, remove or rename collections, use the buttons underneath the left part of the screen.
+
 The add button lets you create new collections. 
+
 The remove button removes the currently selected collection. 
+
 The edit button lets you rename the selected collection. 
+
 The up and down buttons let you move collections up or down. This will affect how they show up in the osu! client, even if they are not sorted alphabetically. Osu! willreset the order of the collections if you add, remove or rename a collection in the osu! client itself, so if you want to keep your ordering, edit them using this program, and not the osu! client.
+
 The options menu contains all of the above actions. This menu can also be found when right-clicking a collection.
 
 Adding/Removing songs to a collection
@@ -86,11 +91,17 @@ Adding/Removing songs to a collection
 ![Song management](http://oce.kurocon.nl/images/song_buttons.png)
 
 When you have a collection selected in the left part of the screen, the songs in that collection will show up on the right part. To add or remove songs or mapsets, use the buttons below the list.
+
 The add button will open a popup in which you can choose which songs to add. More information on the Add Songs dialog is [below](#the-add-songs-dialog).
+
 The remove button will remove all selected songs from the collection. If a mapset is selected along with normal songs, all songs inside will be removed.
+
 The remove set button will remove all songs in the selected mapsets. If a normal song is selected, all songs in its mapset will also be removed!
+
 The options menu contains all of the above actions, plus two more. This menu can also be found when right-clicking a song or mapset.
+
 The `Open download page` option in the menu will open the download page of the song on the osu! website, if OCE knows about it.
+
 The `Search map on bloodcat` option in the menu will open the bloodcat search page, with the beatmap ID filled in. This allows you to try and find the beatmap on bloodcat if the beatmap is removed from the osu! website or if you cannot download from the normal site for some reason.
 
 The Add Songs Dialog
@@ -98,7 +109,9 @@ The Add Songs Dialog
 ![Add Songs dialog](http://oce.kurocon.nl/images/add_songs.png)
 
 When you click the `Add song` button in the main window, OCE will load all of the songs in your song directory into a list, in which you can pick and choose the songs or mapsets you want to add to the currently selected collection. You can search in the list by typing into the search box below the list.
+
 By using the buttons in the center to add songs to the left list, you pick which songs are going to be added. The double-arrow buttons add or remove the entire mapset of the song selected, and the single arrows only add the selected songs, not the entire mapset.
+
 When you're done picking songs, click `OK` and the maps will be added to the collection. Don't forget to save!
 
 Saving your changes
@@ -139,6 +152,7 @@ I appreciate any contribution you want to make to OCE. You are awesome. I only a
 Reporting bugs
 --------------
 This software probably contains a bunch of bugs which I did not notice during programming. If the program crashes on you for some reason, or does not work as you expect it to, you can do the following.
+
 The program generates a logfile, called `oce.log` in the application directory. Whenever something strange happens, this is probably the file that's going to tell me what went wrong. By default though, the file does not contain much. If you can reproduce the strange behaviour by doing what you did to make it happen again, then set the log level of the application to debug as described below, then make the bug happen. Afterwards send me an email at `oce_bugs@kurocon.nl` with exactly how to make the bug happen, what you think should happen, and the log file as an attachment. If you cannot reproduce the bug, sending me the first log file might be able to help me as well. I'll try to respond to all bug reports, but it might take me a while.
 
 **Lowering the log level to 'DEBUG'**
