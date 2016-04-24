@@ -379,6 +379,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def _do_load(self):
         self.log.debug("Opening collection {}...".format(self.collection_file))
 
+        # Clear the collection and songs lists
+        self.ui.collection_list.clear()
+        self.ui.songs_list.clear()
+
+        # Clear controller caches
+        self.collections = None
+        self.unmatched_maps = None
+        self.songs = None
+        self.current_collection = None
+        self.api_matched_maps = None
+
         # Create loading dialog
         l = Loading(self.collection_file, self.song_directory)
         l.exec_()
