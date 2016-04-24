@@ -55,7 +55,7 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           console=False,
-          icon='\icons\oce.ico' )
+          icon='icons\oce.ico' )
 
 print("")
 print("Collecting libraries")
@@ -112,7 +112,7 @@ portable_exe = EXE(pyz,
           strip=False,
           upx=True,
           console=False,
-          icon='\icons\oce.ico' )
+          icon='icons\oce.ico' )
 
 print("")
 print("Collecting static files")
