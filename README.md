@@ -1,7 +1,7 @@
 OCE: The Osu Collections Editor
 ===============================
 
-![Image of OCE](http://insert.image/here.png)
+![Image of OCE](http://oce.kurocon.nl/images/oce.png)
 
 OCE is a small program to easily edit osu! collections. The program can edit the collection.db file from the game directly, using your own osu! song database. The program can find any songs that are missing from your song database, but are present in your collections! These songs do not show up in game, but are still in your collections. OCE can see these songs, and try to identify them using the osu! API. This way you can find that one song that you know was in your collection somewhere, but you lost in the game.
   
@@ -50,20 +50,27 @@ Opening your collections
 ------------------------
 When you start up the program, the first thing you want to do is open up your collections database so you can get to editing! To do that, click `File`, followed by `Open`. (Or press `Ctrl+O`)
 
+![Open collection dialog](http://oce.kurocon.nl/images/open.png)
+
 A popup opens asking you for the location of your osu! songs directory and your collection.db file. There are normally both found in your osu! installation folder (Typically `C\Program Files\osu!` or `C:\Users\(your_username)\AppData\Local\osu!`) but you can also open collection databases downloaded from others or archived song directories.
 
 You can set defaults for both of these values in the [Settings](#settings) so you don't have to fill them in each time!
 
 After giving OCE the location of your songs folder and collection.db, click `OK` and OCE will begin to load your songs and collections!
 
+![API download message](http://oce.kurocon.nl/images/api.png)
+
 When OCE is finished loading your songs and collections, it might have found some maps in your collections database which you do not have in your songs folder. If you have an osu! API key set in the [Settings](#settings), it will ask you if you want to look the information for these songs up via the osu! API. This way, you can find out what these songs are and re-download them via either the osu! song page or look for them on bloodcat if they are no longer available.
 
 Please note that OCE might not be able to find information for all of your missing maps, especially if they have been removed from the osu! website. You can hide these popups or disable API lookup in the [Settings](#settings).
+
+![Main screen](http://oce.kurocon.nl/images/oce.png)
 
 When everything is done, the main screen will show two columns. The left column will contain all your collections (if you have any), and the right will show you the songs in the currently selected collection, if you have one selected. The buttons at the bottom let you add, remove or rename collections and add or remove songs or mapsets.
 
 Adding/Removing/Renaming collections
 ------------------------------------
+![Collection management](http://oce.kurocon.nl/images/collection_buttons.png)
 To add, remove or rename collections, use the buttons underneath the left part of the screen.
 The add button lets you create new collections. 
 The remove button removes the currently selected collection. 
@@ -73,6 +80,7 @@ The options menu contains all of the above actions. This menu can also be found 
 
 Adding/Removing songs to a collection
 -------------------------------------
+![Song management](http://oce.kurocon.nl/images/song_buttons.png)
 When you have a collection selected in the left part of the screen, the songs in that collection will show up on the right part. To add or remove songs or mapsets, use the buttons below the list.
 The add button will open a popup in which you can choose which songs to add. More information on the Add Songs dialog is [below](#the-add-songs-dialog).
 The remove button will remove all selected songs from the collection. If a mapset is selected along with normal songs, all songs inside will be removed.
@@ -83,6 +91,7 @@ The `Search map on bloodcat` option in the menu will open the bloodcat search pa
 
 The Add Songs Dialog
 --------------------
+![Add Songs dialog](http://oce.kurocon.nl/images/add_songs.png)
 When you click the `Add song` button in the main window, OCE will load all of the songs in your song directory into a list, in which you can pick and choose the songs or mapsets you want to add to the currently selected collection. You can search in the list by typing into the search box below the list.
 By using the buttons in the center to add songs to the left list, you pick which songs are going to be added. The double-arrow buttons add or remove the entire mapset of the song selected, and the single arrows only add the selected songs, not the entire mapset.
 When you're done picking songs, click `OK` and the maps will be added to the collection. Don't forget to save!
@@ -93,10 +102,15 @@ To save all of the changes you made to your collections, click `File` followed b
 
 Finding missing songs
 ---------------------
+![The Tools menu](http://oce.kurocon.nl/images/tools.png)
 One of the features of OCE is to show you a list of maps which you have in one of your collections, but do not have in your songs folder. You can show this list by pressing the `Tools` menu, followed by `Missing beatmaps`. This dialog looks different depending on what kinds of missing songs you have.
+![Missing unidentified beatmaps](http://oce.kurocon.nl/images/missing_unidentified_maps.png)
 If you only have unidentified missing maps (maps OCE knows nothing about), then it will show a list of the md5 hashes of those maps.
+![Missing identified beatmaps](http://oce.kurocon.nl/images/missing_identified_maps.png)
 If you only have identified missing maps (maps OCE found via the osu! API) then it will show you the map details, and will give you buttons to open the osu! beatmap page for the map or search for the map on bloodcat.
+![Missing both types of beatmaps](http://oce.kurocon.nl/images/missing_maps.png)
 If you have both types of missing songs, the dialog will show both lists.
+![No missing beatmaps](http://oce.kurocon.nl/images/no_missing_maps.png)
 If you have no missing maps, the dialog will show that, too.
 You can try to look up beatmaps using the osu! API when you load your collection, or do it manually via the `Tools`->`Match with osu! API` menu option.
 
