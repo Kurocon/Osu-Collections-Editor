@@ -115,6 +115,10 @@ class AddSongs(QtWidgets.QMainWindow):
 
         loading_dialog.done.emit()
 
+    def closeEvent(self, *args, **kwargs):
+        self.closed.emit()
+        super(AddSongs, self).closeEvent(*args, **kwargs)
+
     def show(self):
         # Re-set strings correctly
         self.setWindowTitle("Add songs to {}".format(self.collectionname))
