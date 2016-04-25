@@ -56,6 +56,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.songs = None
         self.current_collection = None
         self.api_matched_maps = None
+        self.add_song_window = None
 
         # Get settings instance
         self.settings = settings.Settings.get_instance()
@@ -78,7 +79,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.up_collection_button.clicked.connect(self.up_collection)
         self.ui.down_collection_button.clicked.connect(self.down_collection)
 
-        self.ui.songs_add_button.clicked.connect(self.add_song)
+        self.ui.songs_add_button.clicked.connect(self.show_add_song_window)
         self.ui.songs_remove_button.clicked.connect(self.remove_song)
         self.ui.songs_remove_set_button.clicked.connect(self.remove_set_song)
 
@@ -125,7 +126,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.songs_list.addAction(self.action_song_list_download)
         self.ui.songs_list.addAction(self.action_song_list_bloodcat)
         # Connect to handlers
-        self.action_song_list_add.triggered.connect(self.add_song)
+        self.action_song_list_add.triggered.connect(self.show_add_song_window)
         self.action_song_list_remove.triggered.connect(self.remove_song)
         self.action_song_list_remove_set.triggered.connect(self.remove_set_song)
         self.action_song_list_download.triggered.connect(self.open_dl_page)
@@ -177,7 +178,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Remove the little menu arrow
         self.ui.songs_options_button.setStyleSheet('QToolButton::menu-indicator { image: none; }')
         # Connect to handlers
-        self.action_song_options_add.triggered.connect(self.add_song)
+        self.action_song_options_add.triggered.connect(self.show_add_song_window)
         self.action_song_options_remove.triggered.connect(self.remove_song)
         self.action_song_options_remove_set.triggered.connect(self.remove_set_song)
         self.action_song_options_download.triggered.connect(self.open_dl_page)
@@ -234,6 +235,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     valid_db = os.path.isdir(self.song_db)
 
                 self.collection_db = u.collectiondb
+
+                self.log.debug("User gave {} as songdb and {} as collectiondb".format(self.song_db, self.collection_db))
 
                 # Check if file and dir exist
                 if valid_db and os.path.isfile(self.collection_db):
@@ -292,6 +295,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.songs = None
         self.current_collection = None
         self.api_matched_maps = None
+        self.add_song_window = None
 
         # Disable buttons in file menus
         for a in [self.ui.action_save, self.ui.action_save_as, self.ui.action_close,
@@ -399,6 +403,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.songs = None
         self.current_collection = None
         self.api_matched_maps = None
+        self.add_song_window = None
 
         # Create loading dialog
         l = Loading(self.collection_db, self.song_db)
@@ -834,69 +839,76 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.statusbar.showMessage("Collection is on the bottom, cannot move down.")
             self.log.info("Collection is on the bottom, cannot move down.")
 
-    def add_song(self):
+    def show_add_song_window(self):
         # Disable main window so the current collection can't be changed.
         self.setEnabled(False)
 
-        # Create loading dialog
-        l = LoadingAddSong()
-        l.open()
-        l.text.emit("Loading song list...")
+        # Show addsong window
+        if self.add_song_window is None:
+            self.add_song_window = AddSongs(self.current_collection.name, self.songs)
+            self.add_song_window.closed.connect(self.add_song_window_closed)
 
-        u = AddSongs(self.current_collection.name, self.songs, l)
+        self.add_song_window.collectionname = self.current_collection.name
+        self.add_song_window.show()
+        self.log.info("Add songs window opened.")
 
-        if u.exec_():  # True if dialog is accepted
-            # Get the current addsongs_list contents
-            asl = u.ui.addsongs_list
-            toplevels = [asl.topLevelItem(i) for i in range(asl.topLevelItemCount())]
+    def add_song_window_closed(self):
+        self.log.info("Add songs window closed.")
 
-            for tl in toplevels:
-                # Get children
-                children = [tl.child(i) for i in range(tl.childCount())]
-                for child in children:
-                    widget = asl.itemWidget(child, 0)
-                    diff_hash = widget.difficulty.hash
-                    res = self.songs.get_song(diff_hash)
-                    if res:
-                        song, diff = res
-                        self.log.debug("Adding song {}, diff {} to collection {}".format(song, diff, self.current_collection.name))
-
-                        found_mapset = None
-
-                        # Add mapset with this song if it is not in there, add song if it is there
-                        for mapset in self.current_collection.mapsets:
-                            if (song.difficulties[0].name, song.difficulties[0].artist, song.difficulties[0].mapper) == (mapset.difficulties[0].name, mapset.difficulties[0].artist, mapset.difficulties[0].mapper):
-                                if diff.hash not in [i.hash for i in mapset.difficulties]:
-                                    mapset.add_difficulty(diff)
-                                    found_mapset = mapset
-                                    self.log.debug("Added song to mapset {}".format(mapset))
-                                    break
-                        else:
-                            mset = Song()
-                            mset.add_difficulty(diff)
-                            found_mapset = mset
-                            self.current_collection.mapsets.append(mset)
-                            self.log.debug("Added song to new mapset {}".format(mset))
-
-                        # Add difficulty
-                        if self.current_collection.find_collectionmap_by_difficulty(diff) is None:
-                            cmap = CollectionMap()
-                            cmap.hash = diff.hash
-                            cmap.difficulty = diff
-                            cmap.mapset = found_mapset
-                            self.current_collection.beatmaps.append(cmap)
-                            self.log.debug(
-                                "Added difficulty to collection {}'s beatmaps".format(self.current_collection.name))
-
-                    else:
-                        self.log.warning("Could not find difficulty for {}".format(diff_hash))
-
-            # Redraw the current collection tree
-            self.log.debug("Simulating click on the current collection to refresh the collection list.")
-            self.collection_list_clicked(self.ui.collection_list.currentItem())
+        self.add_songs_from_window()
 
         # Re-enable the main window again.
         self.setEnabled(True)
+
+    def add_songs_from_window(self):
+        # Get the current addsongs_list contents
+        asl = self.add_song_window.ui.addsongs_list
+        toplevels = [asl.topLevelItem(i) for i in range(asl.topLevelItemCount())]
+
+        for tl in toplevels:
+            # Get children
+            children = [tl.child(i) for i in range(tl.childCount())]
+            for child in children:
+                widget = asl.itemWidget(child, 0)
+                diff_hash = widget.difficulty.hash
+                res = self.songs.get_song(diff_hash)
+                if res:
+                    song, diff = res
+                    self.log.debug("Adding song {}, diff {} to collection {}".format(song, diff, self.current_collection.name))
+
+                    found_mapset = None
+
+                    # Add mapset with this song if it is not in there, add song if it is there
+                    for mapset in self.current_collection.mapsets:
+                        if (song.difficulties[0].name, song.difficulties[0].artist, song.difficulties[0].mapper) == (mapset.difficulties[0].name, mapset.difficulties[0].artist, mapset.difficulties[0].mapper):
+                            if diff.hash not in [i.hash for i in mapset.difficulties]:
+                                mapset.add_difficulty(diff)
+                                found_mapset = mapset
+                                self.log.debug("Added song to mapset {}".format(mapset))
+                                break
+                    else:
+                        mset = Song()
+                        mset.add_difficulty(diff)
+                        found_mapset = mset
+                        self.current_collection.mapsets.append(mset)
+                        self.log.debug("Added song to new mapset {}".format(mset))
+
+                    # Add difficulty
+                    if self.current_collection.find_collectionmap_by_difficulty(diff) is None:
+                        cmap = CollectionMap()
+                        cmap.hash = diff.hash
+                        cmap.difficulty = diff
+                        cmap.mapset = found_mapset
+                        self.current_collection.beatmaps.append(cmap)
+                        self.log.debug(
+                            "Added difficulty to collection {}'s beatmaps".format(self.current_collection.name))
+
+                else:
+                    self.log.warning("Could not find difficulty for {}".format(diff_hash))
+
+        # Redraw the current collection tree
+        self.log.debug("Simulating click on the current collection to refresh the collection list.")
+        self.collection_list_clicked(self.ui.collection_list.currentItem())
 
     def remove_song(self):
         selected_items = self.ui.songs_list.selectedItems()

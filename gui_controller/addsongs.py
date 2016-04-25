@@ -1,26 +1,34 @@
 import logging
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 import gui.addsongs
 import settings
 from gui_controller.beatmapitem import BeatmapItem
+from gui_controller.loading_addsong import LoadingAddSong
 
 from util.oce_models import Songs
 
 
-class AddSongs(QtWidgets.QDialog):
-    def __init__(self, collectionname, songs, loading_dialog):
+class AddSongs(QtWidgets.QMainWindow):
+    opened = pyqtSignal()
+    closed = pyqtSignal()
+
+    def __init__(self, collectionname, songs):
         """
         :type collectionname: str
         :type songs: Songs
-        :type loading_dialog: Loading dialog for this dialog.
         """
         super(AddSongs, self).__init__()
         self.log = logging.getLogger(__name__)
 
         self.ui = gui.addsongs.Ui_AddSongs()
         self.ui.setupUi(self)
+
+        # Setup loading dialog
+        loading_dialog = LoadingAddSong()
+        loading_dialog.open()
+        loading_dialog.text.emit("Loading song list...")
 
         # Get settings instance
         self.settings = settings.Settings.get_instance()
@@ -101,7 +109,30 @@ class AddSongs(QtWidgets.QDialog):
         self.ui.remove_mapset_button.clicked.connect(self.remove_mapset)
         self.ui.allsongs_search_field.textChanged.connect(self.searchbar_updated)
 
+        # Attach cancel and ok buttons signals to the appropriate function
+        self.ui.confirmation_buttons.accepted.connect(self.accept)
+        self.ui.confirmation_buttons.rejected.connect(self.reject)
+
         loading_dialog.done.emit()
+
+    def show(self):
+        # Re-set strings correctly
+        self.setWindowTitle("Add songs to {}".format(self.collectionname))
+        self.ui.addsongs_groupbox.setTitle("Songs to add to {}".format(self.collectionname))
+        self.ui.allsongs_search_field.setText("")
+        self.searchbar_updated("")
+        self.opened.emit()
+        super(AddSongs, self).show()
+    
+    def hide(self):
+        self.closed.emit()
+        super(AddSongs, self).hide()
+
+    def accept(self):
+        self.hide()
+
+    def reject(self):
+        self.hide()
 
     def add_beatmap(self):
         selected_items = self.ui.allsongs_list.selectedItems()

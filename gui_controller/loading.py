@@ -31,6 +31,8 @@ class Loading(QtWidgets.QDialog):
         self.song_db = songdb
         self.db_is_directory = os.path.isdir(self.song_db)
 
+        self.log.debug("Loading songdb {}{} and collectiondb {}".format(self.song_db, " (dir)" if self.db_is_directory else "", self.collection_file))
+
         self.progress.connect(self.update_precentage)
         self.current.connect(self.update_current)
         self.text.connect(self.update_text)

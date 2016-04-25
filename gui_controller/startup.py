@@ -52,6 +52,7 @@ class Startup(QtWidgets.QDialog):
             self.ui.osudb_button.setVisible(False)
 
     def on_dropdown_changed(self, index):
+        self.log.debug("New dropdown value: {}".format(index))
         self.loadfrom = index
         # Hide unneeded UI elements based on new dropdown value
         if index == 0:
