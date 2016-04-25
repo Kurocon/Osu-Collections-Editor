@@ -2,8 +2,10 @@ from logging.config import logging
 from PyQt5 import QtWidgets, QtCore, QtGui
 import gui.loading
 import settings
+import os
 import util.collections_parser as cp
 import util.osu_parser as op
+import util.osudb_parser as odp
 
 
 class Loading(QtWidgets.QDialog):
@@ -12,7 +14,7 @@ class Loading(QtWidgets.QDialog):
     text = QtCore.pyqtSignal(str)
     done = QtCore.pyqtSignal()
 
-    def __init__(self, collectionfile, songdir):
+    def __init__(self, collectionfile, songdb):
         super(Loading, self).__init__()
         self.log = logging.getLogger(__name__)
 
@@ -26,7 +28,8 @@ class Loading(QtWidgets.QDialog):
         self.collections = None
         self.songs = None
         self.collection_file = collectionfile
-        self.song_directory = songdir
+        self.song_db = songdb
+        self.db_is_directory = os.path.isdir(self.song_db)
 
         self.progress.connect(self.update_precentage)
         self.current.connect(self.update_current)
@@ -56,7 +59,7 @@ class Loading(QtWidgets.QDialog):
         self.ui.loading_current_label.setText(text)
 
     def exec_(self):
-        w = LoadTask(self.collection_file, self.song_directory, self)
+        w = LoadTask(self.collection_file, self.song_db, self.db_is_directory, self)
         w.moveToThread(self.thread)
         self.thread.started.connect(w.work)
         self.thread.start()
@@ -67,10 +70,11 @@ class Loading(QtWidgets.QDialog):
 
 
 class LoadTask(QtCore.QObject):
-    def __init__(self, cf, sd, dialog):
+    def __init__(self, cf, sd, sd_isdir, dialog):
         super(LoadTask, self).__init__()
         self.collection_file = cf
-        self.song_directory = sd
+        self.song_db = sd
+        self.db_is_directory = sd_isdir
         self.dialog = dialog
         self.settings = settings.Settings.get_instance()
         self.log = logging.getLogger(__name__)
@@ -84,7 +88,10 @@ class LoadTask(QtCore.QObject):
         # Load songs from dir
         self.log.debug("Loading songs...")
         self.dialog.text.emit("Loading songs...")
-        self.dialog.songs = op.load_songs_from_dir_gui(self.song_directory, self.dialog)
+        if self.db_is_directory:
+            self.dialog.songs = op.load_songs_from_dir_gui(self.song_db, self.dialog)
+        else:
+            self.dialog.songs = odp.load_osudb_gui(self.song_db, self.dialog)
 
         # Notify we're done.
         self.dialog.done.emit()

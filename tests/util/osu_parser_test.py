@@ -1,7 +1,8 @@
 import sys
 from pprint import pprint
 
-import util.osu_parser
+from util.osu_parser import find_songs
+from util.oce_models import Difficulty2, Song
 
 if __name__ == "__main__":
 
@@ -22,7 +23,7 @@ if __name__ == "__main__":
     print("------------------------------------------------------------------")
 
     # Find first song
-    song_dirs = util.osu_parser.find_songs(path)
+    song_dirs = find_songs(path)
     sorted_song_dirs = sorted(song_dirs)
 
     song = None
@@ -47,8 +48,8 @@ if __name__ == "__main__":
     print("Using song: {}".format(song))
     print("Using difficulty: {}".format(difficulty))
 
-    beatmap_diff = util.osu_parser.Difficulty.from_file("/".join([path, song, difficulty]))
-    beatmap = util.osu_parser.Song()
+    beatmap_diff = Difficulty2.from_file("/".join([path, song, difficulty]))
+    beatmap = Song()
     beatmap.add_difficulty(beatmap_diff)
 
     print("------------------------------------------------------------------")

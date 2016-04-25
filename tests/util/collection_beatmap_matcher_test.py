@@ -4,6 +4,10 @@ from pprint import pprint
 import util.osu_parser
 import util.collections_parser
 
+from util.collections_parser import parse_collections
+from util.osu_parser import find_songs, OsuBeatmapVersionTooOldException, OsuFileFormatException
+from util.oce_models import Difficulty2, Song, Songs
+
 if __name__ == "__main__":
 
     default_collection_path = "/data/OwnCloud/Osu Program/collection.db"
@@ -35,7 +39,7 @@ if __name__ == "__main__":
     print("")
     print("Loading collection database...")
 
-    collections = util.collections_parser.parse_collections(collection_path)
+    collections = parse_collections(collection_path)
     ccount = collections.collection_count
     scount = sum([i.beatmap_count for i in collections.collections])
 
@@ -48,21 +52,21 @@ if __name__ == "__main__":
     print("")
     print("Loading songs...")
 
-    song_dirs = util.osu_parser.find_songs(songs_path)
+    song_dirs = find_songs(songs_path)
     sorted_song_dirs = sorted(song_dirs)
 
-    songs = util.osu_parser.Songs()
+    songs = Songs()
 
     for song_str in sorted_song_dirs:
-        song = util.osu_parser.Song()
+        song = Song()
         difficulties = song_dirs.get(song_str)
         sorted_difficulties = sorted(difficulties)
 
         for difficulty_str in sorted_difficulties:
             try:
-                difficulty = util.osu_parser.Difficulty2.from_file("/".join([songs_path, song_str, difficulty_str]))
+                difficulty = Difficulty2.from_file("/".join([songs_path, song_str, difficulty_str]))
                 song.add_difficulty(difficulty)
-            except util.osu_parser.OsuBeatmapVersionTooOldException or util.osu_parser.OsuFileFormatException:
+            except OsuBeatmapVersionTooOldException or OsuFileFormatException:
                 pass
 
         songs.add_song(song)

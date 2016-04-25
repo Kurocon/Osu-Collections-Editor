@@ -6,12 +6,14 @@ import gui.addsongs
 import settings
 from gui_controller.beatmapitem import BeatmapItem
 
+from util.oce_models import Songs
+
 
 class AddSongs(QtWidgets.QDialog):
     def __init__(self, collectionname, songs, loading_dialog):
         """
         :type collectionname: str
-        :type songs: util.osu_parser.Songs
+        :type songs: Songs
         :type loading_dialog: Loading dialog for this dialog.
         """
         super(AddSongs, self).__init__()

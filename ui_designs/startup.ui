@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>599</width>
-    <height>160</height>
+    <width>646</width>
+    <height>244</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,73 +19,125 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QGridLayout" name="grid_layout" columnstretch="0,0,0,0" columnminimumwidth="0,0,0,0">
-     <item row="1" column="0">
-      <widget class="QLabel" name="songdir_label">
-       <property name="text">
-        <string>Songs directory</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="collection_label">
-       <property name="text">
-        <string>collection.db</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QLineEdit" name="songdir_edit"/>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLineEdit" name="collectionfile_edit"/>
-     </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="songdir_button">
-       <property name="statusTip">
-        <string extracomment="Browse for Songs directory"/>
-       </property>
-       <property name="text">
-        <string>Browse</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QPushButton" name="collectionfile_button">
-       <property name="statusTip">
-        <string extracomment="Browse for collection.db"/>
-       </property>
-       <property name="text">
-        <string>Browse</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0" colspan="3">
+    <layout class="QVBoxLayout" name="container">
+     <item>
       <widget class="QLabel" name="help_label">
        <property name="text">
-        <string>Please locate your osu! Songs directory and the collection.db file you wish to edit.</string>
-       </property>
-       <property name="textFormat">
-        <enum>Qt::PlainText</enum>
-       </property>
-       <property name="scaledContents">
-        <bool>false</bool>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="wordWrap">
-        <bool>true</bool>
+        <string>Osu Collections Editor can load your songs from two different places. You can load from the
+osu!.db file which osu! itself also uses, or you can load directly from your Songs folder.
+
+Loading from the osu! database will be much faster, but loading directly from your Songs folder 
+can be handy if you do not have an osu!.db at the ready.</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <layout class="QFormLayout" name="form_layout">
+       <property name="horizontalSpacing">
+        <number>6</number>
+       </property>
+       <property name="verticalSpacing">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="QLabel" name="loadfrom_label">
+         <property name="text">
+          <string>Load from</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="loadfrom_dropdown">
+         <item>
+          <property name="text">
+           <string>osu!.db file</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Songs folder</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="osudb_label">
+         <property name="text">
+          <string>osu!.db</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <layout class="QHBoxLayout" name="osudb_fields">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="osudb_edit"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="osudb_button">
+           <property name="text">
+            <string>Browse</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="songsfolder_label">
+         <property name="text">
+          <string>Songs folder</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <layout class="QHBoxLayout" name="songfolder_fields">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="songfolder_edit"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="songfolder_button">
+           <property name="text">
+            <string>Browse</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="collectiondb_label">
+         <property name="text">
+          <string>collection.db</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <layout class="QHBoxLayout" name="collectiondb_fields">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="collectiondb_edit"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="collectiondb_button">
+           <property name="text">
+            <string>Browse</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="button_box">
-     <property name="statusTip">
-      <string/>
-     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>

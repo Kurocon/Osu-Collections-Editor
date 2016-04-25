@@ -19,8 +19,7 @@ from gui_controller.missing_maps import MissingMaps
 import util.song_collection_matcher as scm
 import util.osu_api as oa
 import util.collections_parser as cp
-from util.collections_parser import Collection, CollectionMap
-from util.osu_parser import Difficulty2, Song
+from util.oce_models import Collection, CollectionMap, Difficulty2, Song, Songs
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -29,13 +28,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     :type log: Logger
     :type ui: Ui_MainWindow
-    :type song_directory: str
-    :type collection_file: str
-    :type collections: util.collections_parser.Collections
-    :type songs: util.osu_parser.Songs
-    :type current_collection: util.collections_parser.Collection
+    :type song_db: str
+    :type collection_db: str
+    :type collections: util.oce_models.Collections
+    :type songs: Songs
+    :type current_collection: util.oce_models.Collection
     :type settings: settings.Settings
-    :type unmatched_maps: list[util.collections_parser.CollectionMap]
+    :type unmatched_maps: list[util.oce_models.CollectionMap]
     """
 
     do_load = QtCore.pyqtSignal()
@@ -50,8 +49,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = gui.main.Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.song_directory = ""
-        self.collection_file = ""
+        self.song_db = ""
+        self.collection_db = ""
         self.collections = None
         self.unmatched_maps = None
         self.songs = None
@@ -226,16 +225,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
         while not valid:
             if u.exec_():  # True if dialog is accepted
-                self.song_directory = u.songdir
-                self.collection_file = u.collectionfile
+                valid_db = False
+                if u.loadfrom == 0:  # Load from osu!.db
+                    self.song_db = u.osudb
+                    valid_db = os.path.isfile(self.song_db)
+                else:  # Load from song folder
+                    self.song_db = u.songfolder
+                    valid_db = os.path.isdir(self.song_db)
+
+                self.collection_db = u.collectiondb
 
                 # Check if file and dir exist
-                if os.path.isdir(self.song_directory) and os.path.isfile(self.collection_file):
+                if valid_db and os.path.isfile(self.collection_db):
                     valid = True
-                elif not os.path.isdir(self.song_directory):
-                    self.ui.statusbar.showMessage("Song dir {} does not exist or is not a directory.".format(self.song_directory))
-                elif not os.path.isfile(self.collection_file):
-                    self.ui.statusbar.showMessage("Collection file {} does not exist or is not a file.".format(self.collection_file))
+                elif u.loadfrom == 0 and not os.path.isfile(self.song_db):
+                    self.ui.statusbar.showMessage("osu!.db file {} does not exist or is not a file.".format(self.song_db))
+                elif u.loadfrom != 0 and not os.path.isdir(self.song_db):
+                    self.ui.statusbar.showMessage(
+                        "Song folder {} does not exist or is not a directory.".format(self.song_db))
+                elif not os.path.isfile(self.collection_db):
+                    self.ui.statusbar.showMessage("Collection file {} does not exist or is not a file.".format(self.collection_db))
+
             else:
                 valid = True
                 load = False
@@ -244,13 +254,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.do_load.emit()
 
     def save(self):
-        self.log.info("Saving collection database to {}".format(self.collection_file))
-        cp.save_collection(self.collections, self.collection_file)
-        self.ui.statusbar.showMessage("Saved collections to {}.".format(self.collection_file))
+        self.log.info("Saving collection database to {}".format(self.collection_db))
+        cp.save_collection(self.collections, self.collection_db)
+        self.ui.statusbar.showMessage("Saved collections to {}.".format(self.collection_db))
 
     def save_as(self):
         file = QtWidgets.QFileDialog.getSaveFileName(self, "Choose save location for collection.db file",
-                                                     self.collection_file,
+                                                     self.collection_db,
                                                      "Osu Collections (collection.db);;All files (*)")
 
         if file[0] != '':
@@ -275,8 +285,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.songs_list.clear()
 
         # Clear controller caches
-        self.song_directory = ""
-        self.collection_file = ""
+        self.song_db = ""
+        self.collection_db = ""
         self.collections = None
         self.unmatched_maps = None
         self.songs = None
@@ -377,7 +387,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                               unmatched_c))
 
     def _do_load(self):
-        self.log.debug("Opening collection {}...".format(self.collection_file))
+        self.log.debug("Opening collection {}...".format(self.collection_db))
 
         # Clear the collection and songs lists
         self.ui.collection_list.clear()
@@ -391,7 +401,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.api_matched_maps = None
 
         # Create loading dialog
-        l = Loading(self.collection_file, self.song_directory)
+        l = Loading(self.collection_db, self.song_db)
         l.exec_()
 
         # Get result from dialog
@@ -491,7 +501,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.settings.get_setting("osu_api_key"):
             self.ui.action_api_match.setEnabled(True)
 
-        self.ui.collection_label.setText(self.collection_file)
+        self.ui.collection_label.setText(self.collection_db)
         self.ui.statusbar.showMessage(
             "Loaded {} collections and {} songs.".format(len(self.collections.collections), len(self.songs.songs)))
 

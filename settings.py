@@ -23,8 +23,12 @@ class Settings:
         self.default_settings = {
             'osu_api_key': "",
             'download_from_api': 0,
-            'default_songs_dir': "",
-            'default_collection_file': "",
+
+            'default_loadfrom': 0,
+            'default_osudb': "",
+            'default_songs_folder': "",
+            'default_collectiondb': "",
+
             'show_shutdown_dialog': True,
             'show_api_explanation_dialog': True,
             'show_collection_delete_dialog': True,

@@ -21,8 +21,12 @@ class Settings(QtWidgets.QDialog):
         # Set current values from settings
         self.ui.api_key_line.setText(self.settings.get_setting("osu_api_key"))
         self.ui.download_api_combobox.setCurrentIndex(self.settings.get_setting("download_from_api"))
-        self.ui.default_songs_line.setText(self.settings.get_setting("default_songs_dir"))
-        self.ui.default_collection_line.setText(self.settings.get_setting("default_collection_file"))
+
+        self.ui.loadfrom_dropdown.setCurrentIndex(self.settings.get_setting("default_loadfrom"))
+        self.ui.default_osudb_line.setText(self.settings.get_setting("default_osudb"))
+        self.ui.default_songs_line.setText(self.settings.get_setting("default_songs_folder"))
+        self.ui.default_collection_line.setText(self.settings.get_setting("default_collectiondb"))
+
         self.ui.shutdown_dialog_checkbox.setChecked(self.settings.get_setting("show_shutdown_dialog"))
         self.ui.api_explanation_dialog.setChecked(self.settings.get_setting("show_api_explanation_dialog"))
         self.ui.collection_delete_dialog.setChecked(self.settings.get_setting("show_collection_delete_dialog"))
@@ -30,7 +34,8 @@ class Settings(QtWidgets.QDialog):
         self.ui.mapset_remove_dialog.setChecked(self.settings.get_setting("show_remove_mapset_dialog"))
 
         # Setup handlers for buttons
-        self.ui.default_songs_button.clicked.connect(self.browse_osudir)
+        self.ui.default_osudb_button.clicked.connect(self.browse_osudb)
+        self.ui.default_songs_button.clicked.connect(self.browse_songsdir)
         self.ui.default_collection_button.clicked.connect(self.browse_collectionfile)
 
         # Setup handlers for OK/Cancel/Apply buttons
@@ -51,8 +56,12 @@ class Settings(QtWidgets.QDialog):
         # Update settings
         self.settings.set_setting('osu_api_key', self.ui.api_key_line.text())
         self.settings.set_setting('download_from_api', self.ui.download_api_combobox.currentIndex())
-        self.settings.set_setting('default_songs_dir', self.ui.default_songs_line.text())
-        self.settings.set_setting('default_collection_file', self.ui.default_collection_line.text())
+
+        self.settings.set_setting('default_loadfrom', self.ui.loadfrom_dropdown.currentIndex())
+        self.settings.set_setting('default_osudb', self.ui.default_osudb_line.text())
+        self.settings.set_setting('default_songs_folder', self.ui.default_songs_line.text())
+        self.settings.set_setting('default_collectiondb', self.ui.default_collection_line.text())
+
         self.settings.set_setting('show_shutdown_dialog', self.ui.shutdown_dialog_checkbox.isChecked())
         self.settings.set_setting('show_api_explanation_dialog', self.ui.api_explanation_dialog.isChecked())
         self.settings.set_setting('show_collection_delete_dialog', self.ui.collection_delete_dialog.isChecked())
@@ -65,7 +74,17 @@ class Settings(QtWidgets.QDialog):
 
         self.log.info("Settings were applied.")
 
-    def browse_osudir(self):
+    def browse_osudb(self):
+        file = QtWidgets.QFileDialog.getOpenFileName(self, "Pick your osu!.db file",
+                                                     self.ui.default_osudb_line.text(),
+                                                     "osu!.db (osu!.db);;All files (*)")
+
+        if file:
+            self.ui.default_osudb_line.setText(file[0])
+
+        self.log.debug("New default osu!.db file: {}".format(self.ui.default_osudb_line.text()))
+
+    def browse_songsdir(self):
         directory = QtWidgets.QFileDialog.getExistingDirectory(self,
                                                                "Pick your osu! Song folder",
                                                                self.ui.default_songs_line.text())
@@ -78,7 +97,7 @@ class Settings(QtWidgets.QDialog):
     def browse_collectionfile(self):
         file = QtWidgets.QFileDialog.getOpenFileName(self, "Pick your osu! collection.db file",
                                                      self.ui.default_collection_line.text(),
-                                                     "Osu Collections (collection.db);;All files (*)")
+                                                     "collection.db (collection.db);;All files (*)")
 
         if file:
             self.ui.default_collection_line.setText(file[0])

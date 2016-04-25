@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>624</width>
-    <height>423</height>
+    <height>488</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -105,20 +105,41 @@
        </property>
        <layout class="QFormLayout" name="formLayout_2">
         <item row="0" column="0">
+         <widget class="QLabel" name="loadfrom_label">
+          <property name="text">
+           <string>Load from</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="loadfrom_dropdown">
+          <item>
+           <property name="text">
+            <string>osu!.db file</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Songs folder</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="default_osudb_label">
+          <property name="text">
+           <string>Default osu!.db</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
          <widget class="QLabel" name="default_songs_label">
           <property name="text">
            <string>Default Songs folder</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="default_collection_label">
-          <property name="text">
-           <string>Default collection.db</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
+        <item row="2" column="1">
          <layout class="QHBoxLayout" name="default_songs_layout">
           <item>
            <widget class="QLineEdit" name="default_songs_line"/>
@@ -132,13 +153,34 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="1">
+        <item row="3" column="0">
+         <widget class="QLabel" name="default_collection_label">
+          <property name="text">
+           <string>Default collection.db</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
          <layout class="QHBoxLayout" name="default_collection_layout">
           <item>
            <widget class="QLineEdit" name="default_collection_line"/>
           </item>
           <item>
            <widget class="QPushButton" name="default_collection_button">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="1">
+         <layout class="QHBoxLayout" name="default_osudb_layout">
+          <item>
+           <widget class="QLineEdit" name="default_osudb_line"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="default_osudb_button">
             <property name="text">
              <string>Browse</string>
             </property>

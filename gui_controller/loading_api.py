@@ -2,8 +2,9 @@ from logging.config import logging
 from PyQt5 import QtWidgets, QtCore, QtGui
 import gui.loading
 import settings
-import util.osu_parser as op
 import util.osu_api as oa
+
+from util.oce_models import Difficulty2, Song
 
 
 class LoadingApi(QtWidgets.QDialog):
@@ -99,7 +100,7 @@ class LoadApiTask(QtCore.QObject):
             if res:
                 details = res[0]
                 # Create a difficulty for the map
-                diff = op.Difficulty2("api")
+                diff = Difficulty2("api")
                 diff.name = details['title']
                 diff.artist = details['artist']
                 diff.mapper = details['creator']
@@ -127,7 +128,7 @@ class LoadApiTask(QtCore.QObject):
                         break
                 # If the for loop ended without breaking, create a mapset for this map
                 else:
-                    umap.mapset = op.Song()
+                    umap.mapset = Song()
                     umap.mapset.add_difficulty(diff)
                     umap.mapset.beatmapset_id = int(details['beatmapset_id'])
                     self.log.debug("Created new mapset for beatpam {} - {} [{}] (beatmapset_id {})".format(diff.artist, diff.name, diff.difficulty, umap.mapset.beatmapset_id))
