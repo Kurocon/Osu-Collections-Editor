@@ -81,7 +81,7 @@
    <item>
     <widget class="QLabel" name="developer_text">
      <property name="text">
-      <string>&lt;p&gt;Created by &lt;a href=&quot;http://www.kevinalberts.nl/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Kevin Alberts&lt;/span&gt;&lt;/a&gt; (&lt;a href=&quot;http://osu.ppy.sh/u/Kurocon&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Kurocon&lt;/span&gt;&lt;/a&gt;)&lt;br /&gt;Source on &lt;a href=&quot;http://gitlab.kurocon.nl/Kurocon/OsuCollectionsEditor&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GitLab&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</string>
+      <string>&lt;p&gt;Created by &lt;a href=&quot;http://www.kevinalberts.nl/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Kevin Alberts&lt;/span&gt;&lt;/a&gt; (&lt;a href=&quot;http://osu.ppy.sh/u/Kurocon&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Kurocon&lt;/span&gt;&lt;/a&gt;)&lt;br /&gt;Source on &lt;a href=&quot;https://github.com/Kurocon/Osu-Collections-Editor&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GitHub&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
