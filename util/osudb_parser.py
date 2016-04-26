@@ -85,6 +85,11 @@ from util.osudb_format import read_type
 
 def parse_beatmap(fobj, version):
     log = logging.getLogger(__name__)
+
+    # If the database is of a newer version than 20150422, we need to read an int here
+    if version > 20151026:
+        some_int = read_type("Int", fobj)
+
     # First, the trivial data of the beatmap
     data = []
     for type in ["String"]*9 + ["Byte"] + ["Short"]*3 + ["Long"]:
@@ -191,6 +196,9 @@ def parse_beatmap(fobj, version):
     log.debug("Loaded {}: {} - {} [{}] by {}".format(beatmap.beatmap_id, beatmap.artist,
                                                      beatmap.name, beatmap.difficulty, beatmap.mapper))
 
+    if None in [osu_file, song, artist, creator, difficulty, ar, cs, hp, od, md5, beatmap_id, beatmap_id, beatmap_set_id]:
+        log.warn("One of the values found for this beatmap is not set. Probably something is going wrong in parsing!")
+
     return beatmap
 
 
@@ -218,7 +226,16 @@ def load_osudb(path):
     # Then, for each beatmap, we need to read the beatmap
     beatmaps = []
     for _ in range(num_maps):
-        beatmaps.append(parse_beatmap(fobj, version))
+        beatmap = parse_beatmap(fobj, version)
+
+        # Check if the beatmap was parsed correctly, abourt parsing if not
+        if None in [beatmap.path, beatmap.name, beatmap.artist, beatmap.mapper, beatmap.difficulty, beatmap.ar,
+                    beatmap.cs, beatmap.hp, beatmap.od, beatmap.hash, beatmap.from_api, beatmap.api_beatmap_id,
+                    beatmap.beatmap_id, beatmap.beatmapset_id]:
+            log.warn("Parse error detected. Aborting parsing.")
+            return None
+
+        beatmaps.append(beatmap)
 
     # Now, group the beatmaps by their mapset id, to group them into Songs for the songs list.
     mapsets = {}
