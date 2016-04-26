@@ -12,8 +12,8 @@ import sys
 # Where a is alpha, b is beta, g is gamma, nothing is release
 # a,b,g number is the number of the alpha/beta/gamma release.
 # Releases don't need to have a number, they can just be version 1.0, 2.4, etc.
-__version__ = "1.1.1"
-__build__ = 102
+__version__ = "1.1.2"
+__build__ = 103
 
 
 def main():
