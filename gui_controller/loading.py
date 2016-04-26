@@ -52,12 +52,12 @@ class Loading(QtWidgets.QDialog):
 
     def update_text(self, text):
         if len(text) > 33:
-            text = text[:30] + "..."
+            text = text[:40] + "..."
         self.ui.loading_label.setText(text)
 
     def update_current(self, text):
         if len(text) > 33:
-            text = text[:30] + "..."
+            text = text[:40] + "..."
         self.ui.loading_current_label.setText(text)
 
     def exec_(self):

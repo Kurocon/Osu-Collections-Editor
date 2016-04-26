@@ -46,6 +46,7 @@ class AddSongs(QtWidgets.QMainWindow):
         # Progress bar
         progress = 0
         total_progress = len(self.songs.songs)
+        bar_progress = 0
 
         # Create backup list of top level items
         self.allsongs_toplevel_items = []
@@ -54,10 +55,13 @@ class AddSongs(QtWidgets.QMainWindow):
         # Add songs to left tree
         for song in self.songs.songs:
             if len(song.difficulties) > 0:
-                loading_dialog.progress.emit(int((progress / total_progress) * 100))
-                loading_dialog.current.emit(
-                    "{} - {} ({}) ({} maps)".format(song.difficulties[0].artist, song.difficulties[0].name,
-                                                    song.difficulties[0].mapper, len(song.difficulties)))
+                if bar_progress < int((progress / total_progress) * 100):
+                    bar_progress = int((progress / total_progress) * 100)
+                    loading_dialog.progress.emit(int((progress / total_progress) * 100))
+                    loading_dialog.current.emit(
+                        "({}/{}) {} - {} ({}) ({} maps)".format(progress, total_progress, song.difficulties[0].artist,
+                                                                song.difficulties[0].name, song.difficulties[0].mapper,
+                                                                len(song.difficulties)))
                 progress += 1
 
                 tli = QtWidgets.QTreeWidgetItem()
