@@ -1,11 +1,5 @@
-import hashlib
-import os
-import re
 import logging
-import traceback
-
 from util.oce_models import Difficulty2, Songs, Song
-from util.osudb_format import OSU_SINGLE, OSU_SHORT, OSU_LONG, OSU_BOOLEAN, OSU_BYTE, OSU_DOUBLE, OSU_INT
 from util.osudb_format import read_type
 
 # osu!.db format
@@ -210,7 +204,6 @@ def load_osudb(path):
     songs = Songs()
 
     # Try to parse the file as an osu db.
-
     # First we have some primitive simple types we can just read in one bunch
     data = []
     for type in ["Int", "Int", "Boolean", "DateTime", "String", "Int"]:
@@ -281,10 +274,25 @@ def load_osudb_gui(path, dialog):
     # Then, for each beatmap, we need to read the beatmap
     beatmaps = []
     dialog.current.emit("Parsing beatmaps...")
+    progress = 0
     for _ in range(num_maps):
-        dialog.progress.emit(int((num_done / num_maps) * 100))
-        beatmaps.append(parse_beatmap(fobj, version))
+
+        # Only update the progress bar if there is at least one percent more progress
+        if progress < int((num_done / num_maps) * 100):
+            progress = int((num_done / num_maps) * 100)
+            dialog.progress.emit(progress)
+
+        beatmap = parse_beatmap(fobj, version)
+
+        # Check if the beatmap was parsed correctly, abourt parsing if not
+        if None in [beatmap.path, beatmap.name, beatmap.artist, beatmap.mapper, beatmap.difficulty, beatmap.ar,
+                    beatmap.cs, beatmap.hp, beatmap.od, beatmap.hash, beatmap.from_api, beatmap.api_beatmap_id,
+                    beatmap.beatmap_id, beatmap.beatmapset_id]:
+            log.warn("Parse error detected. Aborting parsing.")
+            return None
+
         num_done += 1
+        beatmaps.append(beatmap)
 
     dialog.current.emit("Loading mapsets into OCE...")
 
@@ -301,7 +309,5 @@ def load_osudb_gui(path, dialog):
         s = Song()
         s.difficulties = mapset
         songs.add_song(s)
-
-    dialog.progress.emit(100)
 
     return songs
