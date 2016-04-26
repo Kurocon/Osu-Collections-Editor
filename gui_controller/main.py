@@ -413,7 +413,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log.debug("Dialog returned. Getting results")
         self.songs = l.songs
         self.collections = l.collections
-        self.do_match.emit()
+
+        # Check if parsing succeeded:
+        if self.songs is None or self.collections is None:
+            self.log.debug("Parsing failed; showing error dialog.")
+            QtWidgets.QMessageBox.critical(self, 'Parsing error',
+                                           "<p>Something went wrong while loading your song database or "
+                                           "collection file. See the oce.log file for details.</p>")
+
+            if self.songs is None:
+                self.songs = Songs()
+            if self.collections is None:
+                self.collections = Collections()
+        else:
+            self.do_match.emit()
 
     def _do_match(self):
         # Match songs to collections

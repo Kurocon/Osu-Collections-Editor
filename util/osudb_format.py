@@ -26,18 +26,18 @@ def parse_string(fileobj):
 
     if ord(indicator) == 0:
         # The next two parts are not present.
-        log.log(5, "Read empty STRING")
+        # log.log(5, "Read empty STRING")
         return ""
     elif ord(indicator) == 11:
         # The next two parts are present.
         # The first part is a ULEB128. Get that.
         uleb = parse_uleb128(fileobj)
-        log.log(5, "Read {} as ULEB128".format(uleb))
+        # log.log(5, "Read {} as ULEB128".format(uleb))
         s = fileobj.read(uleb).decode('utf-8')
-        log.log(5, "Read {} as STRING".format(s))
+        # log.log(5, "Read {} as STRING".format(s))
         return s
     else:
-        log.log(5, "Could not read valid STRING")
+        log.debug("Could not read valid STRING from the .db file. Probably something is going wrong in parsing.")
         return
 
 
@@ -105,63 +105,69 @@ def get_uleb128(integer):
 def read_type(type, fobj):
     log = logging.getLogger(__name__)
 
-    if type == "Int":
-        bs = fobj.read(OSU_INT)
-        log.log(5, "Read {} as INT".format(bs))
-        return int.from_bytes(bs, byteorder='little')
-    elif type == "String":
-        s = parse_string(fobj)
-        return s
-    elif type == "Byte":
-        bs = fobj.read(OSU_BYTE)
-        log.log(5, "Read {} as BYTE".format(bs))
-        return bs
-    elif type == "Short":
-        bs = fobj.read(OSU_SHORT)
-        log.log(5, "Read {} as SHORT".format(bs))
-        return int.from_bytes(bs, byteorder='little')
-    elif type == "Long":
-        bs = fobj.read(OSU_LONG)
-        log.log(5, "Read {} as LONG".format(bs))
-        return int.from_bytes(bs, byteorder='little')
-    elif type == "Single":  # Also known as float
-        bs = fobj.read(OSU_SINGLE)
-        log.log(5, "Read {} as SINGLE".format(bs))
-        return struct.unpack('f', bs)
-    elif type == "Double":
-        bs = fobj.read(OSU_DOUBLE)
-        log.log(5, "Read {} as DOUBLE".format(bs))
-        return struct.unpack('d', bs)
-    elif type == "Boolean":
-        bs = fobj.read(OSU_BOOLEAN)
-        log.log(5, "Read {} as BOOL".format(bs))
-        return bs != b'\x00'
-    elif type == "IntDoublepair":
-        oxo8 = fobj.read(OSU_BYTE)
-        log.log(5, "Read {} as BYTE".format(oxo8))
-        bs1 = fobj.read(OSU_INT)
-        log.log(5, "Read {} as INT".format(bs1))
-        i = int.from_bytes(bs1, byteorder='little')
-        oxob = fobj.read(OSU_BYTE)
-        log.log(5, "Read {} as BYTE".format(oxob))
-        bs2 = fobj.read(OSU_DOUBLE)
-        log.log(5, "Read {} as DOUBLE".format(bs2))
-        d = struct.unpack('d', bs2)
-        return i, d
-    elif type == "Timingpoint":
-        bs1 = fobj.read(OSU_DOUBLE)
-        log.log(5, "Read {} as DOUBLE".format(bs1))
-        bpm = struct.unpack('d', bs1)
-        bs2 = fobj.read(OSU_DOUBLE)
-        log.log(5, "Read {} as DOUBLE".format(bs2))
-        offset = struct.unpack('d', bs2)
-        bs3 = fobj.read(OSU_BOOLEAN)
-        log.log(5, "Read {} as BOOL".format(bs3))
-        uninherited = bs3 != b'\x00'
-        return bpm, offset, uninherited
-    elif type == "DateTime":
-        bs = fobj.read(OSU_DATETIME)
-        log.log(5, "Read {} as DATETIME".format(bs))
-        return int.from_bytes(bs, byteorder='little')
-    else:
-        raise TypeError("I don't know how to read {}".format(type))
+    try:
+
+        if type == "Int":
+            bs = fobj.read(OSU_INT)
+            # log.log(5, "Read {} as INT".format(bs))
+            return int.from_bytes(bs, byteorder='little')
+        elif type == "String":
+            s = parse_string(fobj)
+            return s
+        elif type == "Byte":
+            bs = fobj.read(OSU_BYTE)
+            # log.log(5, "Read {} as BYTE".format(bs))
+            return bs
+        elif type == "Short":
+            bs = fobj.read(OSU_SHORT)
+            # log.log(5, "Read {} as SHORT".format(bs))
+            return int.from_bytes(bs, byteorder='little')
+        elif type == "Long":
+            bs = fobj.read(OSU_LONG)
+            # log.log(5, "Read {} as LONG".format(bs))
+            return int.from_bytes(bs, byteorder='little')
+        elif type == "Single":  # Also known as float
+            bs = fobj.read(OSU_SINGLE)
+            # log.log(5, "Read {} as SINGLE".format(bs))
+            return struct.unpack('f', bs)
+        elif type == "Double":
+            bs = fobj.read(OSU_DOUBLE)
+            # log.log(5, "Read {} as DOUBLE".format(bs))
+            return struct.unpack('d', bs)
+        elif type == "Boolean":
+            bs = fobj.read(OSU_BOOLEAN)
+            # log.log(5, "Read {} as BOOL".format(bs))
+            return bs != b'\x00'
+        elif type == "IntDoublepair":
+            oxo8 = fobj.read(OSU_BYTE)
+            # log.log(5, "Read {} as BYTE".format(oxo8))
+            bs1 = fobj.read(OSU_INT)
+            # log.log(5, "Read {} as INT".format(bs1))
+            i = int.from_bytes(bs1, byteorder='little')
+            oxob = fobj.read(OSU_BYTE)
+            # log.log(5, "Read {} as BYTE".format(oxob))
+            bs2 = fobj.read(OSU_DOUBLE)
+            # log.log(5, "Read {} as DOUBLE".format(bs2))
+            d = struct.unpack('d', bs2)
+            return i, d
+        elif type == "Timingpoint":
+            bs1 = fobj.read(OSU_DOUBLE)
+            # log.log(5, "Read {} as DOUBLE".format(bs1))
+            bpm = struct.unpack('d', bs1)
+            bs2 = fobj.read(OSU_DOUBLE)
+            # log.log(5, "Read {} as DOUBLE".format(bs2))
+            offset = struct.unpack('d', bs2)
+            bs3 = fobj.read(OSU_BOOLEAN)
+            # log.log(5, "Read {} as BOOL".format(bs3))
+            uninherited = bs3 != b'\x00'
+            return bpm, offset, uninherited
+        elif type == "DateTime":
+            bs = fobj.read(OSU_DATETIME)
+            # log.log(5, "Read {} as DATETIME".format(bs))
+            return int.from_bytes(bs, byteorder='little')
+        else:
+            log.warn("Error while reading .db file. I don't know how to read {}".format(type))
+
+    except struct.error as e:
+        log.warn("Error while parsing .db file. {}".format(e))
+        raise e

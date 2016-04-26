@@ -85,15 +85,33 @@ class LoadTask(QtCore.QObject):
         # Load collections from file
         self.log.debug("Loading collections...")
         self.dialog.text.emit("Loading collections...")
-        self.dialog.collections = cp.parse_collections_gui(self.collection_file, self.dialog)
+        try:
+            self.dialog.collections = cp.parse_collections_gui(self.collection_file, self.dialog)
+        except Exception as e:
+            self.log.error("Error while parsing collections.db: {}".format(e))
+            import traceback
+            traceback.print_exc()
+            self.dialog.collections = None
 
         # Load songs from dir
         self.log.debug("Loading songs...")
         self.dialog.text.emit("Loading songs...")
         if self.db_is_directory:
-            self.dialog.songs = op.load_songs_from_dir_gui(self.song_db, self.dialog)
+            try:
+                self.dialog.songs = op.load_songs_from_dir_gui(self.song_db, self.dialog)
+            except Exception as e:
+                self.log.error("Error while parsing Song folder: {}".format(e))
+                import traceback
+                traceback.print_exc()
+                self.dialog.songs = None
         else:
-            self.dialog.songs = odp.load_osudb_gui(self.song_db, self.dialog)
+            try:
+                self.dialog.songs = odp.load_osudb_gui(self.song_db, self.dialog)
+            except Exception as e:
+                self.log.error("Error while parsing osu!.db: {}".format(e))
+                import traceback
+                traceback.print_exc()
+                self.dialog.songs = None
 
         # Notify we're done.
         self.dialog.done.emit()
